@@ -36,6 +36,7 @@ echo ""
 echo "====> Creating directory structure"
 sudo mkdir -p "$APP_DIR/data"
 sudo mkdir -p "$APP_DIR/logs"
+sudo mkdir -p "$APP_DIR/config"
 sudo mkdir -p "$WEB_ROOT"
  
 # ── 3. Copy files ─────────────────────────────────────────────────────────────
@@ -51,6 +52,9 @@ sudo cp -r "$REPO_DIR/public/." "$WEB_ROOT/"
  
 # Schema
 sudo cp "$REPO_DIR/data/schema.sql" "$APP_DIR/data/schema.sql"
+ 
+# App config
+sudo cp "$REPO_DIR/config/config.php" "$APP_DIR/config/config.php"
  
 # MPD config
 sudo cp "$REPO_DIR/config/mpd.conf" /etc/mpd.conf
@@ -71,6 +75,10 @@ sudo chmod -R 755 "$APP_DIR/src"
 # Data dir owned by www-data (PHP needs to write the DB)
 sudo chown -R www-data:www-data "$APP_DIR/data"
 sudo chmod -R 750 "$APP_DIR/data"
+ 
+# Config dir — readable by www-data, not world-readable
+sudo chown -R www-data:www-data "$APP_DIR/config"
+sudo chmod -R 750 "$APP_DIR/config"
  
 # Logs owned by www-data
 sudo chown -R www-data:www-data "$APP_DIR/logs"
@@ -120,8 +128,12 @@ sudo tee "$VHOST_CONF" > /dev/null <<'EOF'
         Require all granted
     </Directory>
  
-    # Keep PHP source out of the web root
+    # Keep PHP source and config out of the web root
     <Directory /opt/radio/src>
+        Require all denied
+    </Directory>
+ 
+    <Directory /opt/radio/config>
         Require all denied
     </Directory>
  
@@ -170,4 +182,4 @@ echo "  Setup complete."
 echo "  Site:   http://futureradio.net"
 echo "  Stream: http://futureradio.net/stream"
 echo "  DB:     $APP_DIR/data/radio.db"
-echo "========================================================"
+echo "==================================
