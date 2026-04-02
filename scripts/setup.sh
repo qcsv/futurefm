@@ -9,12 +9,10 @@ echo "=====> Setting up user"
 sudo adduser futurefm --home /home/futurefm --disabled-password --comment "futurefm"
 echo "====> Setting up group"
 #sudo addgroup music-players
-sudo mkdir /home/futurefm/Music
 
 
-
-# Deploy MPD Config file
-#cp config/mpd.conf /etc/mpd.conf
+ Deploy MPD Config file
+cp config/mpd.conf /etc/mpd.conf
 
 # Deploy PHP file
 #cp www/index.php /var/www/htdocs/index.php
