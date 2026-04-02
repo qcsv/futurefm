@@ -53,6 +53,9 @@ sudo cp -r "$REPO_DIR/public/." "$WEB_ROOT/"
 # Schema
 sudo cp "$REPO_DIR/data/schema.sql" "$APP_DIR/data/schema.sql"
  
+# Views
+sudo cp -r "$REPO_DIR/views" "$APP_DIR/views"
+ 
 # App config
 sudo cp "$REPO_DIR/config/config.php" "$APP_DIR/config/config.php"
  
@@ -71,6 +74,10 @@ sudo chmod -R 755 "$WEB_ROOT"
 # App src owned by www-data (PHP needs to read it)
 sudo chown -R www-data:www-data "$APP_DIR/src"
 sudo chmod -R 755 "$APP_DIR/src"
+ 
+# Views owned by www-data
+sudo chown -R www-data:www-data "$APP_DIR/views"
+sudo chmod -R 755 "$APP_DIR/views"
  
 # Data dir owned by www-data (PHP needs to write the DB)
 sudo chown -R www-data:www-data "$APP_DIR/data"
@@ -182,4 +189,5 @@ echo "  Setup complete."
 echo "  Site:   http://futureradio.net"
 echo "  Stream: http://futureradio.net/stream"
 echo "  DB:     $APP_DIR/data/radio.db"
-echo "==================================
+echo "========================================================"
+ 
