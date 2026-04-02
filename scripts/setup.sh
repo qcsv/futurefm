@@ -24,10 +24,10 @@ sudo apt-get install -y \
     mpd \
     mpc \
     apache2 \
-    php8.3 \
-    php8.3-sqlite3 \
-    php8.3-mbstring \
-    libapache2-mod-php8.3 \
+    php8.4 \
+    php8.4-sqlite3 \
+    php8.4-mbstring \
+    libapache2-mod-php8.4 \
     sqlite3
  
 # ── 2. Directory structure ────────────────────────────────────────────────────
@@ -112,7 +112,7 @@ echo ""
 echo "====> Enabling Apache modules"
 sudo a2enmod rewrite
 sudo a2enmod proxy
-sudo a2enmod php8.3
+sudo a2enmod php8.4
 sudo a2enmod proxy_http
  
 # ── 7. Apache vhost ───────────────────────────────────────────────────────────
