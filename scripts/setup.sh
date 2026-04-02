@@ -4,10 +4,13 @@ echo "========> Setting up server"
 sudo apt-get -y install mpd apache2 php sqlite3 mpc
 
 
-# sudo adduser futurefum
-# sudo addgroup music-players
-#sudo mkdir /opt/radio
-#sudo chown futurefm /opt/radio
+
+echo "=====> Setting up user"
+sudo adduser futurefm --home /home/futurefm
+echo "====> Setting up group"
+sudo addgroup music-players
+sudo mkdir /home/futurefm/Music
+
 
 
 # Deploy MPD Config file
