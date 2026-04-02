@@ -337,6 +337,30 @@ class Router
             require VIEWS_DIR . '/admin/users.php';
         });
 
+        $this->post('/admin/users/delete', function () use ($auth, $db) {
+            $auth->requireAuth();
+            $auth->requireAdmin();
+
+            $id          = (int) ($_POST['user_id'] ?? 0);
+            $currentUser = $auth->currentUser();
+
+            // Prevent admin from deleting themselves
+            if ($id === (int) $currentUser['user_id']) {
+                error_log('Admin attempted to delete their own account.');
+                header('Location: /admin/users');
+                exit;
+            }
+
+            try {
+                $db->deleteUser($id);
+            } catch (DatabaseException $e) {
+                error_log('delete user failed: ' . $e->getMessage());
+            }
+
+            header('Location: /admin/users');
+            exit;
+        });
+
         $this->get('/admin/queue', function () use ($auth) {
             $auth->requireAuth();
             $auth->requireAdmin();

@@ -55,6 +55,11 @@
                                 <?= $user['active'] ? 'Suspend' : 'Activate' ?>
                             </button>
                         </form>
+                        <form method="post" action="/admin/users/delete"
+                              onsubmit="return confirm('Delete <?= htmlspecialchars($user['username']) ?>? This cannot be undone.')">
+                            <input type="hidden" name="user_id" value="<?= $user['id'] ?>">
+                            <button type="submit" class="btn-danger">Delete</button>
+                        </form>
                     </td>
                 </tr>
             <?php endforeach; ?>

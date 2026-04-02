@@ -159,7 +159,16 @@ button:hover, .btn:hover {
     background-color: var(--pink-light);
 }
 
-select {
+button.btn-danger, .btn-danger {
+    background-color: #cc0000;
+    color:            var(--white);
+}
+
+button.btn-danger:hover, .btn-danger:hover {
+    background-color: #ff2222;
+}
+
+
     background-color: var(--dark);
     border:           1px solid var(--mid);
     color:            var(--white);

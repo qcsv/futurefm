@@ -123,6 +123,33 @@ class Database
     }
 
     /**
+     * Delete a user and all associated sessions and invite tokens.
+     *
+     * Deletion order respects foreign key constraints:
+     * sessions → invite_tokens → users.
+     *
+     * @throws DatabaseException If the user does not exist.
+     */
+    public function deleteUser(int $id): void
+    {
+        if ($this->findUserById($id) === null) {
+            throw new DatabaseException("User {$id} not found.");
+        }
+
+        $this->pdo->prepare(
+            'DELETE FROM sessions WHERE user_id = ?'
+        )->execute([$id]);
+
+        $this->pdo->prepare(
+            'DELETE FROM invite_tokens WHERE created_by = ?'
+        )->execute([$id]);
+
+        $this->pdo->prepare(
+            'DELETE FROM users WHERE id = ?'
+        )->execute([$id]);
+    }
+
+    /**
      * Return all users, ordered by creation date descending.
      *
      * @return array Array of user rows.

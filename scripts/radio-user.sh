@@ -25,6 +25,9 @@ usage() {
     echo "  radio-user list"
     echo "  radio-user disable <username>"
     echo "  radio-user enable <username>"
+    echo "  radio-user promote <username>"
+    echo "  radio-user demote <username>"
+    echo "  radio-user delete <username>"
     echo "  radio-user reset-password <username>"
     exit 1
 }
@@ -180,6 +183,54 @@ cmd_reset_password() {
     echo "Password updated for '$username'. Existing sessions revoked."
 }
 
+cmd_delete() {
+    local username="$1"
+    [ -z "$username" ] && usage
+
+    require_db
+
+    user_exists "$username" || die "User '$username' not found."
+
+    read -rp "Delete '$username' and all their sessions and invite tokens? Type YES to confirm: " confirm
+    if [ "$confirm" != "YES" ]; then
+        echo "Aborted."
+        exit 0
+    fi
+
+    local user_id
+    user_id=$(query "SELECT id FROM users WHERE username = '$username';")
+
+    query "DELETE FROM sessions WHERE user_id = $user_id;"
+    query "DELETE FROM invite_tokens WHERE created_by = $user_id;"
+    query "DELETE FROM users WHERE id = $user_id;"
+
+    echo "User '$username' deleted."
+}
+
+cmd_promote() {
+    local username="$1"
+    [ -z "$username" ] && usage
+
+    require_db
+
+    user_exists "$username" || die "User '$username' not found."
+
+    query "UPDATE users SET role = 'admin' WHERE username = '$username';"
+    echo "User '$username' promoted to admin."
+}
+
+cmd_demote() {
+    local username="$1"
+    [ -z "$username" ] && usage
+
+    require_db
+
+    user_exists "$username" || die "User '$username' not found."
+
+    query "UPDATE users SET role = 'listener' WHERE username = '$username';"
+    echo "User '$username' demoted to listener."
+}
+
 # ── Dispatch ──────────────────────────────────────────────────────────────────
 
 SUBCOMMAND="${1:-}"
@@ -190,6 +241,9 @@ case "$SUBCOMMAND" in
     list)           cmd_list ;;
     disable)        cmd_disable "$@" ;;
     enable)         cmd_enable "$@" ;;
+    promote)        cmd_promote "$@" ;;
+    demote)         cmd_demote "$@" ;;
+    delete)         cmd_delete "$@" ;;
     reset-password) cmd_reset_password "$@" ;;
     *)              usage ;;
 esac
