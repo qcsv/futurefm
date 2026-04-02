@@ -1,5 +1,5 @@
 <?php
- 
+
 /**
  * db.php — Database access layer
  *
@@ -9,17 +9,17 @@
  *
  * Requires config.php to be loaded before instantiation.
  */
- 
+
 class DatabaseException extends RuntimeException {}
- 
+
 class Database
 {
     private PDO $pdo;
- 
+
     // -------------------------------------------------------------------------
     // Construction
     // -------------------------------------------------------------------------
- 
+
     /**
      * Open the SQLite database at DB_PATH.
      *
@@ -31,21 +31,21 @@ class Database
             $this->pdo = new PDO('sqlite:' . DB_PATH);
             $this->pdo->setAttribute(PDO::ATTR_ERRMODE,            PDO::ERRMODE_EXCEPTION);
             $this->pdo->setAttribute(PDO::ATTR_DEFAULT_FETCH_MODE, PDO::FETCH_ASSOC);
- 
+
             // Enable WAL mode for better concurrent read performance
             $this->pdo->exec('PRAGMA journal_mode=WAL');
- 
+
             // Enforce foreign key constraints (SQLite disables them by default)
             $this->pdo->exec('PRAGMA foreign_keys=ON');
         } catch (PDOException $e) {
             throw new DatabaseException('Could not open database: ' . $e->getMessage());
         }
     }
- 
+
     // -------------------------------------------------------------------------
     // Users
     // -------------------------------------------------------------------------
- 
+
     /**
      * Find a user by their username.
      *
@@ -60,7 +60,7 @@ class Database
         $row = $stmt->fetch();
         return $row !== false ? $row : null;
     }
- 
+
     /**
      * Find a user by their ID.
      *
@@ -75,7 +75,7 @@ class Database
         $row = $stmt->fetch();
         return $row !== false ? $row : null;
     }
- 
+
     /**
      * Find a user by their email address.
      *
@@ -90,7 +90,7 @@ class Database
         $row = $stmt->fetch();
         return $row !== false ? $row : null;
     }
- 
+
     /**
      * Create a new user account.
      *
@@ -109,7 +109,7 @@ class Database
         if (!in_array($role, ['listener', 'admin'], true)) {
             throw new DatabaseException("Invalid role: {$role}");
         }
- 
+
         try {
             $stmt = $this->pdo->prepare(
                 'INSERT INTO users (username, email, password, role)
@@ -121,7 +121,7 @@ class Database
             throw new DatabaseException('Could not create user: ' . $e->getMessage());
         }
     }
- 
+
     /**
      * Return all users, ordered by creation date descending.
      *
@@ -136,7 +136,7 @@ class Database
         );
         return $stmt->fetchAll();
     }
- 
+
     /**
      * Set a user's active flag.
      *
@@ -148,12 +148,12 @@ class Database
             'UPDATE users SET active = ? WHERE id = ?'
         );
         $stmt->execute([$active ? 1 : 0, $id]);
- 
+
         if ($stmt->rowCount() === 0) {
             throw new DatabaseException("User {$id} not found.");
         }
     }
- 
+
     /**
      * Set a user's role.
      *
@@ -164,17 +164,17 @@ class Database
         if (!in_array($role, ['listener', 'admin'], true)) {
             throw new DatabaseException("Invalid role: {$role}");
         }
- 
+
         $stmt = $this->pdo->prepare(
             'UPDATE users SET role = ? WHERE id = ?'
         );
         $stmt->execute([$role, $id]);
- 
+
         if ($stmt->rowCount() === 0) {
             throw new DatabaseException("User {$id} not found.");
         }
     }
- 
+
     /**
      * Update a user's hashed password.
      *
@@ -188,16 +188,16 @@ class Database
             'UPDATE users SET password = ? WHERE id = ?'
         );
         $stmt->execute([$passwordHash, $id]);
- 
+
         if ($stmt->rowCount() === 0) {
             throw new DatabaseException("User {$id} not found.");
         }
     }
- 
+
     // -------------------------------------------------------------------------
     // Sessions
     // -------------------------------------------------------------------------
- 
+
     /**
      * Create a new session for a user.
      *
@@ -211,7 +211,7 @@ class Database
     {
         $token     = bin2hex(random_bytes(32));
         $expiresAt = time() + SESSION_LIFETIME;
- 
+
         try {
             $stmt = $this->pdo->prepare(
                 'INSERT INTO sessions (user_id, token, expires_at)
@@ -221,10 +221,10 @@ class Database
         } catch (PDOException $e) {
             throw new DatabaseException('Could not create session: ' . $e->getMessage());
         }
- 
+
         return $token;
     }
- 
+
     /**
      * Look up a session by token.
      *
@@ -239,7 +239,7 @@ class Database
         $this->pdo->prepare(
             'DELETE FROM sessions WHERE token = ? AND expires_at < ?'
         )->execute([$token, time()]);
- 
+
         $stmt = $this->pdo->prepare(
             'SELECT s.id, s.token, s.expires_at,
                     u.id AS user_id, u.username, u.role, u.active
@@ -252,7 +252,7 @@ class Database
         $row = $stmt->fetch();
         return $row !== false ? $row : null;
     }
- 
+
     /**
      * Delete a session by token (logout).
      */
@@ -262,7 +262,7 @@ class Database
             'DELETE FROM sessions WHERE token = ?'
         )->execute([$token]);
     }
- 
+
     /**
      * Delete all sessions belonging to a user.
      *
@@ -274,7 +274,7 @@ class Database
             'DELETE FROM sessions WHERE user_id = ?'
         )->execute([$userId]);
     }
- 
+
     /**
      * Delete all expired sessions across all users.
      *
@@ -290,11 +290,11 @@ class Database
         $stmt->execute([time()]);
         return $stmt->rowCount();
     }
- 
+
     // -------------------------------------------------------------------------
     // Invite tokens
     // -------------------------------------------------------------------------
- 
+
     /**
      * Create a new invite token for a given email address.
      *
@@ -306,7 +306,7 @@ class Database
     {
         $token     = bin2hex(random_bytes(32));
         $expiresAt = time() + INVITE_TOKEN_LIFETIME;
- 
+
         try {
             $stmt = $this->pdo->prepare(
                 'INSERT INTO invite_tokens (token, email, created_by, expires_at)
@@ -316,10 +316,10 @@ class Database
         } catch (PDOException $e) {
             throw new DatabaseException('Could not create invite token: ' . $e->getMessage());
         }
- 
+
         return $token;
     }
- 
+
     /**
      * Look up an invite token.
      *
@@ -341,7 +341,7 @@ class Database
         $row = $stmt->fetch();
         return $row !== false ? $row : null;
     }
- 
+
     /**
      * Mark an invite token as used.
      *
@@ -353,7 +353,7 @@ class Database
             'UPDATE invite_tokens SET used = 1 WHERE token = ?'
         )->execute([$token]);
     }
- 
+
     /**
      * Return all invite tokens, ordered by creation date descending.
      *
@@ -368,5 +368,56 @@ class Database
              ORDER BY t.created_at DESC'
         );
         return $stmt->fetchAll();
+    }
+
+    // -------------------------------------------------------------------------
+    // Login attempts
+    // -------------------------------------------------------------------------
+
+    /**
+     * Get the current failed login attempt count for an IP address.
+     *
+     * @return int The number of failed attempts, or 0 if none recorded.
+     */
+    public function getLoginAttempts(string $ip): int
+    {
+        $stmt = $this->pdo->prepare(
+            'SELECT attempts FROM login_attempts WHERE ip = ? LIMIT 1'
+        );
+        $stmt->execute([$ip]);
+        $row = $stmt->fetch();
+        return $row !== false ? (int) $row['attempts'] : 0;
+    }
+
+    /**
+     * Record a failed login attempt for an IP address.
+     *
+     * Inserts a new row or increments the existing count.
+     *
+     * @return int The new total attempt count for this IP.
+     */
+    public function recordLoginAttempt(string $ip): int
+    {
+        $this->pdo->prepare(
+            'INSERT INTO login_attempts (ip, attempts, last_attempt)
+             VALUES (?, 1, unixepoch())
+             ON CONFLICT(ip) DO UPDATE SET
+                 attempts     = attempts + 1,
+                 last_attempt = unixepoch()'
+        )->execute([$ip]);
+
+        return $this->getLoginAttempts($ip);
+    }
+
+    /**
+     * Reset the failed login attempt counter for an IP address.
+     *
+     * Call this on successful login.
+     */
+    public function resetLoginAttempts(string $ip): void
+    {
+        $this->pdo->prepare(
+            'DELETE FROM login_attempts WHERE ip = ?'
+        )->execute([$ip]);
     }
 }
