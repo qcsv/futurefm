@@ -199,7 +199,7 @@ class Router
 
             if ($password !== $confirm) {
                 $error  = 'Passwords do not match.';
-                $invite = $this->db->findInviteToken($token);
+                $invite = $this->$db->findInviteToken($token);
                 require VIEWS_DIR . '/register.php';
                 return;
             }
