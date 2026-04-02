@@ -191,7 +191,7 @@ class Router
             require VIEWS_DIR . '/register.php';
         });
 
-        $this->post('/register', function () use ($auth) {
+        $this->post('/register', function () use ($auth, $db) {
             $token    = trim($_POST['token']    ?? '');
             $username = trim($_POST['username'] ?? '');
             $password = $_POST['password']      ?? '';
@@ -199,7 +199,7 @@ class Router
 
             if ($password !== $confirm) {
                 $error  = 'Passwords do not match.';
-                $invite = $this->$db->findInviteToken($token);
+                $invite = $db->findInviteToken($token);
                 require VIEWS_DIR . '/register.php';
                 return;
             }
