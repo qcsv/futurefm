@@ -6,9 +6,9 @@ sudo apt-get -y install mpd apache2 php sqlite3 mpc
 
 
 echo "=====> Setting up user"
-sudo adduser futurefm --home /home/futurefm
+sudo adduser futurefm --home /home/futurefm --disabled-password --comment "futurefm"
 echo "====> Setting up group"
-sudo addgroup music-players
+#sudo addgroup music-players
 sudo mkdir /home/futurefm/Music
 
 
