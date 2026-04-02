@@ -9,6 +9,7 @@ data/*.db-wal
 # Vim swap files
 *.swp
 *.swo
+*~
 
 # OS garbage
 .DS_Store
