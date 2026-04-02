@@ -1,0 +1,321 @@
+/* ── Reset ───────────────────────────────────────────────────────────────── */
+
+*, *::before, *::after {
+    box-sizing: border-box;
+    margin: 0;
+    padding: 0;
+}
+
+/* ── Variables ───────────────────────────────────────────────────────────── */
+
+:root {
+    --black:      #0a0a0a;
+    --dark:       #1a1a1a;
+    --mid:        #2a2a2a;
+    --pink:       #ff2d78;
+    --pink-light: #ff6fa8;
+    --white:      #f0f0f0;
+    --grey:       #888;
+    --error:      #ff4444;
+    --success:    #44cc44;
+    --font:       'Courier New', Courier, monospace;
+}
+
+/* ── Base ────────────────────────────────────────────────────────────────── */
+
+html, body {
+    height: 100%;
+}
+
+body {
+    background-color: var(--black);
+    color:            var(--white);
+    font-family:      var(--font);
+    font-size:        16px;
+    line-height:      1.6;
+    display:          flex;
+    flex-direction:   column;
+    min-height:       100vh;
+}
+
+a {
+    color:           var(--pink);
+    text-decoration: none;
+}
+
+a:hover {
+    color:           var(--pink-light);
+    text-decoration: underline;
+}
+
+h1 { font-size: 2rem;   margin-bottom: 1rem; color: var(--pink); }
+h2 { font-size: 1.4rem; margin-bottom: 0.75rem; color: var(--pink-light); }
+
+/* ── Header ──────────────────────────────────────────────────────────────── */
+
+.site-header {
+    background-color: var(--dark);
+    border-bottom:    2px solid var(--pink);
+    padding:          0.75rem 1.5rem;
+    display:          flex;
+    align-items:      center;
+    justify-content:  space-between;
+}
+
+.site-name {
+    font-size:   1.25rem;
+    font-weight: bold;
+    color:       var(--pink);
+}
+
+.site-name:hover {
+    color:           var(--pink-light);
+    text-decoration: none;
+}
+
+.site-nav {
+    display: flex;
+    gap:     1.5rem;
+    align-items: center;
+}
+
+.nav-user {
+    color: var(--grey);
+}
+
+/* ── Main ────────────────────────────────────────────────────────────────── */
+
+.site-main {
+    flex:    1;
+    padding: 2rem 1.5rem;
+    max-width: 900px;
+    width: 100%;
+    margin: 0 auto;
+}
+
+/* ── Footer ──────────────────────────────────────────────────────────────── */
+
+.site-footer {
+    background-color: var(--dark);
+    border-top:       1px solid var(--mid);
+    padding:          0.75rem 1.5rem;
+    text-align:       center;
+    color:            var(--grey);
+    font-size:        0.85rem;
+}
+
+/* ── Forms ───────────────────────────────────────────────────────────────── */
+
+.form-page {
+    max-width: 400px;
+}
+
+.form-page h1 {
+    margin-bottom: 1.5rem;
+}
+
+form {
+    display:        flex;
+    flex-direction: column;
+    gap:            0.75rem;
+}
+
+label {
+    font-size: 0.9rem;
+    color:     var(--pink-light);
+}
+
+input[type="text"],
+input[type="email"],
+input[type="password"] {
+    background-color: var(--dark);
+    border:           1px solid var(--mid);
+    color:            var(--white);
+    font-family:      var(--font);
+    font-size:        1rem;
+    padding:          0.5rem 0.75rem;
+    width:            100%;
+}
+
+input[type="text"]:focus,
+input[type="email"]:focus,
+input[type="password"]:focus {
+    outline:      none;
+    border-color: var(--pink);
+}
+
+button, .btn {
+    background-color: var(--pink);
+    border:           none;
+    color:            var(--black);
+    cursor:           pointer;
+    font-family:      var(--font);
+    font-size:        1rem;
+    font-weight:      bold;
+    padding:          0.5rem 1rem;
+}
+
+button:hover, .btn:hover {
+    background-color: var(--pink-light);
+}
+
+select {
+    background-color: var(--dark);
+    border:           1px solid var(--mid);
+    color:            var(--white);
+    font-family:      var(--font);
+    font-size:        0.9rem;
+    padding:          0.25rem 0.5rem;
+}
+
+/* ── Messages ────────────────────────────────────────────────────────────── */
+
+.error {
+    color:         var(--error);
+    border-left:   3px solid var(--error);
+    padding-left:  0.75rem;
+    margin-bottom: 1rem;
+}
+
+.success {
+    color:         var(--success);
+    border-left:   3px solid var(--success);
+    padding-left:  0.75rem;
+    margin-bottom: 1rem;
+}
+
+/* ── Player ──────────────────────────────────────────────────────────────── */
+
+.player {
+    display:        flex;
+    flex-direction: column;
+    gap:            2rem;
+}
+
+.now-playing-label {
+    font-size:     0.85rem;
+    color:         var(--grey);
+    text-transform: uppercase;
+    letter-spacing: 0.1em;
+    margin-bottom: 0.5rem;
+}
+
+.track-title {
+    font-size:     2rem;
+    color:         var(--pink);
+    margin-bottom: 0.25rem;
+}
+
+.track-artist {
+    font-size:     1.2rem;
+    color:         var(--white);
+    margin-bottom: 0.25rem;
+}
+
+.track-album {
+    color: var(--grey);
+}
+
+audio {
+    width:  100%;
+    accent-color: var(--pink);
+}
+
+/* ── Tables ──────────────────────────────────────────────────────────────── */
+
+.data-table {
+    width:           100%;
+    border-collapse: collapse;
+    margin-bottom:   1.5rem;
+    font-size:       0.95rem;
+}
+
+.data-table th,
+.data-table td {
+    text-align: left;
+    padding:    0.5rem 0.75rem;
+    border-bottom: 1px solid var(--mid);
+}
+
+.data-table th {
+    color:            var(--pink-light);
+    border-bottom:    2px solid var(--pink);
+}
+
+.data-table tr:hover td {
+    background-color: var(--dark);
+}
+
+.queue-current td {
+    background-color: var(--mid);
+    color:            var(--pink);
+}
+
+code {
+    background-color: var(--dark);
+    color:            var(--pink-light);
+    padding:          0.1rem 0.4rem;
+    font-family:      var(--font);
+    font-size:        0.85rem;
+    word-break:       break-all;
+}
+
+/* ── Admin ───────────────────────────────────────────────────────────────── */
+
+.admin-nav {
+    display:       flex;
+    gap:           1rem;
+    margin-bottom: 2rem;
+    border-bottom: 1px solid var(--mid);
+    padding-bottom: 1rem;
+}
+
+.playback-controls {
+    display:       flex;
+    gap:           0.5rem;
+    margin-bottom: 1.5rem;
+    flex-wrap:     wrap;
+    align-items:   center;
+}
+
+.control-btn {
+    font-size: 1.1rem;
+    padding:   0.4rem 0.8rem;
+}
+
+.now-playing-admin {
+    background-color: var(--dark);
+    border-left:      3px solid var(--pink);
+    padding:          0.75rem 1rem;
+    margin-bottom:    1.5rem;
+}
+
+.inline-form {
+    flex-direction: row;
+    align-items:    center;
+    gap:            0.5rem;
+    margin-bottom:  1.5rem;
+}
+
+.inline-form input {
+    width: auto;
+    flex:  1;
+}
+
+/* ── Error pages ─────────────────────────────────────────────────────────── */
+
+.error-page h1 {
+    font-size:     5rem;
+    margin-bottom: 0.5rem;
+}
+
+.error-page p {
+    color:         var(--grey);
+    margin-bottom: 1rem;
+}
+
+/* ── Dashboard status ────────────────────────────────────────────────────── */
+
+.dashboard-status {
+    margin-top: 1.5rem;
+}
