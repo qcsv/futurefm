@@ -102,7 +102,7 @@ if [ -f "$DB_FILE" ]; then
     echo "     WARNING: $DB_FILE already exists, skipping initialization"
     echo "     Delete it manually and re-run if you want a fresh database"
 else
-    sudo -u www-data sqlite3 "$DB_FILE" < "$APP_DIR/data/schema.sql"
+    sudo -u www-data sh -c "sqlite3 '$DB_FILE' < '$APP_DIR/data/schema.sql'"
     echo "     Created $DB_FILE"
 fi
  
