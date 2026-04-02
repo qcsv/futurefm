@@ -1,0 +1,15 @@
+# SQLite database files
+data/radio.db
+data/*.db-shm
+data/*.db-wal
+
+# Emacs lock files
+.#*
+
+# Vim swap files
+*.swp
+*.swo
+
+# OS garbage
+.DS_Store
+Thumbs.db
