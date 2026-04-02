@@ -1,7 +1,7 @@
 #!/usr/bin/bash
 
 echo "========> Setting up server"
-sudo apt-get -y mpd apache2 php sqlite3 mpc
+sudo apt-get -y install mpd apache2 php sqlite3 mpc
 
 
 adduser futurefum
