@@ -201,12 +201,50 @@ button.btn-danger:hover, .btn-danger:hover {
     gap:            2rem;
 }
 
+.now-playing {
+    display:   flex;
+    gap:       2rem;
+    align-items: flex-start;
+}
+
+.album-art-wrap {
+    flex-shrink: 0;
+    width:       220px;
+    height:      220px;
+    position:    relative;
+}
+
+.album-art {
+    width:      220px;
+    height:     220px;
+    object-fit: cover;
+    display:    block;
+    border:     2px solid var(--pink);
+}
+
+.album-art-placeholder {
+    width:            220px;
+    height:           220px;
+    background-color: var(--dark);
+    border:           2px solid var(--mid);
+    display:          flex;
+    align-items:      center;
+    justify-content:  center;
+    font-size:        5rem;
+    color:            var(--mid);
+}
+
+.now-playing-info {
+    flex: 1;
+    padding-top: 0.5rem;
+}
+
 .now-playing-label {
-    font-size:     0.85rem;
-    color:         var(--grey);
+    font-size:      0.85rem;
+    color:          var(--grey);
     text-transform: uppercase;
     letter-spacing: 0.1em;
-    margin-bottom: 0.5rem;
+    margin-bottom:  0.5rem;
 }
 
 .track-title {
@@ -223,11 +261,6 @@ button.btn-danger:hover, .btn-danger:hover {
 
 .track-album {
     color: var(--grey);
-}
-
-audio {
-    width:  100%;
-    accent-color: var(--pink);
 }
 
 /* ── Tables ──────────────────────────────────────────────────────────────── */

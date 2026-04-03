@@ -3,10 +3,23 @@
 
 <section class="player">
     <div class="now-playing">
-        <p class="now-playing-label">Now Playing</p>
-        <p class="track-title"  id="track-title">—</p>
-        <p class="track-artist" id="track-artist">—</p>
-        <p class="track-album"  id="track-album"></p>
+        <div class="album-art-wrap">
+            <img
+                id="album-art"
+                class="album-art"
+                src=""
+                alt="Album art"
+                style="display:none"
+            >
+            <div class="album-art-placeholder" id="album-art-placeholder">&#9835;</div>
+        </div>
+
+        <div class="now-playing-info">
+            <p class="now-playing-label">Now Playing</p>
+            <p class="track-title"  id="track-title">—</p>
+            <p class="track-artist" id="track-artist">—</p>
+            <p class="track-album"  id="track-album"></p>
+        </div>
     </div>
 </section>
 
@@ -42,14 +55,16 @@
     const audio       = document.getElementById('radio-audio');
     const playBtn     = document.getElementById('play-btn');
     const muteBtn     = document.getElementById('mute-btn');
-    const volSlider   = document.getElementById('volume-slider');
     const barTitle    = document.getElementById('bar-title');
     const barArtist   = document.getElementById('bar-artist');
     const trackTitle  = document.getElementById('track-title');
     const trackArtist = document.getElementById('track-artist');
     const trackAlbum  = document.getElementById('track-album');
+    const albumArt    = document.getElementById('album-art');
+    const artHolder   = document.getElementById('album-art-placeholder');
 
-    let playing = false;
+    let playing     = false;
+    let lastArtKey  = '';
 
     function togglePlay() {
         if (playing) {
@@ -76,6 +91,38 @@
         muteBtn.innerHTML = '&#128266;';
     }
 
+    async function fetchAlbumArt(artist, album) {
+        const key = artist + '|' + album;
+        if (key === lastArtKey) return;
+        lastArtKey = key;
+
+        if (!artist || !album) {
+            albumArt.style.display  = 'none';
+            artHolder.style.display = 'flex';
+            return;
+        }
+
+        try {
+            const res = await fetch(
+                '/album-art?artist=' + encodeURIComponent(artist) +
+                '&album='  + encodeURIComponent(album)
+            );
+            if (!res.ok) return;
+            const data = await res.json();
+
+            if (data.url) {
+                albumArt.src           = data.url;
+                albumArt.style.display = 'block';
+                artHolder.style.display = 'none';
+            } else {
+                albumArt.style.display  = 'none';
+                artHolder.style.display = 'flex';
+            }
+        } catch (e) {
+            // silently fail
+        }
+    }
+
     async function updateNowPlaying() {
         try {
             const res = await fetch('/now-playing');
@@ -85,7 +132,7 @@
             }
             if (!res.ok) return;
 
-            const data = await res.json();
+            const data   = await res.json();
             const title  = data.title  || '—';
             const artist = data.artist || '';
             const album  = data.album  || '';
@@ -95,8 +142,10 @@
             trackAlbum.textContent  = album;
             barTitle.textContent    = title;
             barArtist.textContent   = artist;
+
+            fetchAlbumArt(artist, album);
         } catch (e) {
-            // Network error — silently skip this tick
+            // silently fail
         }
     }
 

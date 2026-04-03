@@ -447,4 +447,56 @@ class Database
             'DELETE FROM login_attempts WHERE ip = ?'
         )->execute([$ip]);
     }
+
+    // -------------------------------------------------------------------------
+    // Album art cache
+    // -------------------------------------------------------------------------
+
+    /** Cache TTL in seconds. 24 hours. */
+    private const ART_TTL = 86400;
+
+    /**
+     * Normalise artist + album into a cache key.
+     */
+    private function artKey(string $artist, string $album): string
+    {
+        return strtolower(trim($artist)) . '|' . strtolower(trim($album));
+    }
+
+    /**
+     * Look up a cached album art URL.
+     *
+     * Returns null if not cached or expired.
+     * Returns empty string if previously looked up but no art was found.
+     * Returns a URL string if art was found.
+     */
+    public function getCachedAlbumArt(string $artist, string $album): ?string
+    {
+        $stmt = $this->pdo->prepare(
+            'SELECT url, cached_at FROM album_art_cache WHERE key = ? LIMIT 1'
+        );
+        $stmt->execute([$this->artKey($artist, $album)]);
+        $row = $stmt->fetch();
+
+        if ($row === false) return null;
+        if ((time() - (int) $row['cached_at']) > self::ART_TTL) return null;
+
+        return $row['url'];
+    }
+
+    /**
+     * Store an album art URL in the cache.
+     *
+     * Pass an empty string to record a negative result (no art found).
+     */
+    public function cacheAlbumArt(string $artist, string $album, string $url): void
+    {
+        $this->pdo->prepare(
+            'INSERT INTO album_art_cache (key, url, cached_at)
+             VALUES (?, ?, unixepoch())
+             ON CONFLICT(key) DO UPDATE SET
+                 url       = excluded.url,
+                 cached_at = unixepoch()'
+        )->execute([$this->artKey($artist, $album), $url]);
+    }
 }

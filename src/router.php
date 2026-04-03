@@ -222,6 +222,83 @@ class Router
 
         // ── API ───────────────────────────────────────────────────────────────
 
+        $this->get('/album-art', function () use ($auth, $db) {
+            header('Content-Type: application/json');
+
+            if (!$auth->isLoggedIn()) {
+                http_response_code(401);
+                echo json_encode(['url' => '']);
+                exit;
+            }
+
+            $artist = trim($_GET['artist'] ?? '');
+            $album  = trim($_GET['album']  ?? '');
+
+            if ($artist === '' || $album === '') {
+                echo json_encode(['url' => '']);
+                exit;
+            }
+
+            // Check cache first
+            $cached = $db->getCachedAlbumArt($artist, $album);
+            if ($cached !== null) {
+                echo json_encode(['url' => $cached]);
+                exit;
+            }
+
+            // Query MusicBrainz for a release ID
+            $url = '';
+            try {
+                $query = http_build_query([
+                    'query'  => 'artist:"' . $artist . '" AND release:"' . $album . '"',
+                    'limit'  => '1',
+                    'fmt'    => 'json',
+                ]);
+
+                $context = stream_context_create([
+                    'http' => [
+                        'header'  => "User-Agent: FutureRadio/1.0 (futureradio.net)\r\n",
+                        'timeout' => 5,
+                    ],
+                ]);
+
+                $response = @file_get_contents(
+                    'https://musicbrainz.org/ws/2/release/?' . $query,
+                    false,
+                    $context
+                );
+
+                if ($response !== false) {
+                    $data = json_decode($response, true);
+                    $releaseId = $data['releases'][0]['id'] ?? null;
+
+                    if ($releaseId !== null) {
+                        // Verify cover art exists on Cover Art Archive
+                        $artCheck = @file_get_contents(
+                            "https://coverartarchive.org/release/{$releaseId}/front-250",
+                            false,
+                            stream_context_create(['http' => [
+                                'timeout' => 5,
+                                'header'  => "User-Agent: FutureRadio/1.0 (futureradio.net)\r\n",
+                            ]])
+                        );
+
+                        if ($artCheck !== false) {
+                            $url = "https://coverartarchive.org/release/{$releaseId}/front-250";
+                        }
+                    }
+                }
+            } catch (\Throwable $e) {
+                error_log('Album art lookup failed: ' . $e->getMessage());
+            }
+
+            // Cache the result (including empty string for misses)
+            $db->cacheAlbumArt($artist, $album, $url);
+
+            echo json_encode(['url' => $url]);
+            exit;
+        });
+
         $this->get('/now-playing', function () use ($auth, $db) {
             header('Content-Type: application/json');
 

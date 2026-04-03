@@ -7,7 +7,7 @@ CREATE TABLE IF NOT EXISTS users (
     active      INTEGER NOT NULL DEFAULT 1,
     created_at  INTEGER NOT NULL DEFAULT (unixepoch())
 );
- 
+
 CREATE TABLE IF NOT EXISTS sessions (
     id          INTEGER PRIMARY KEY AUTOINCREMENT,
     user_id     INTEGER NOT NULL REFERENCES users(id),
@@ -15,7 +15,7 @@ CREATE TABLE IF NOT EXISTS sessions (
     created_at  INTEGER NOT NULL DEFAULT (unixepoch()),
     expires_at  INTEGER NOT NULL
 );
- 
+
 CREATE TABLE IF NOT EXISTS invite_tokens (
     id          INTEGER PRIMARY KEY AUTOINCREMENT,
     token       TEXT NOT NULL UNIQUE,
@@ -25,10 +25,15 @@ CREATE TABLE IF NOT EXISTS invite_tokens (
     expires_at  INTEGER NOT NULL,
     used        INTEGER NOT NULL DEFAULT 0
 );
- 
+
 CREATE TABLE IF NOT EXISTS login_attempts (
     ip           TEXT PRIMARY KEY,
     attempts     INTEGER NOT NULL DEFAULT 0,
     last_attempt INTEGER NOT NULL DEFAULT (unixepoch())
 );
- 
+
+CREATE TABLE IF NOT EXISTS album_art_cache (
+    key        TEXT PRIMARY KEY,  -- "artist|album" normalized to lowercase
+    url        TEXT NOT NULL,     -- cover art URL, empty string if not found
+    cached_at  INTEGER NOT NULL DEFAULT (unixepoch())
+);
