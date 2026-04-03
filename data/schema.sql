@@ -44,6 +44,7 @@ CREATE TABLE IF NOT EXISTS schedule (
     day_of_week   INTEGER,         -- NULL = every day, 0=Sun, 1=Mon, ..., 6=Sat
     time_of_day   TEXT NOT NULL,   -- "HH:MM" 24-hour format
     active        INTEGER NOT NULL DEFAULT 1,
+    loop_all_day  INTEGER NOT NULL DEFAULT 0, -- 1 = loop playlist on repeat all day
     last_run_at   INTEGER,         -- unix timestamp of last execution
     created_by    INTEGER NOT NULL REFERENCES users(id),
     created_at    INTEGER NOT NULL DEFAULT (unixepoch())

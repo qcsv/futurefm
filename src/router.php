@@ -317,6 +317,8 @@ class Router
                     foreach ($db->getDueSchedules() as $sched) {
                         $mpd->clearQueue();
                         $mpd->loadPlaylist($sched['playlist_name']);
+                        // Loop-all-day entries keep repeating; others play through once
+                        $mpd->setRepeat((bool) $sched['loop_all_day']);
                         $mpd->play();
                         $db->markScheduleRun((int) $sched['id']);
                     }
@@ -762,16 +764,30 @@ class Router
             $auth->requireAuth();
             $auth->requireAdmin();
 
-            $schedules = $db->getSchedules();
-            $playlists = [];
+            $schedules         = $db->getSchedules();
+            $playlists         = [];
+            $playlistDurations = []; // name => total seconds
 
             try {
                 $mpd = new MPD(MPD_HOST, MPD_PORT);
                 $mpd->connect();
                 $playlists = $mpd->listSavedPlaylists();
+
+                // Compute total duration of each playlist for the calendar blocks
+                foreach ($playlists as $pl) {
+                    try {
+                        $songs = $mpd->listPlaylistInfo($pl['playlist']);
+                        $playlistDurations[$pl['playlist']] = array_sum(
+                            array_map(fn($s) => $s->duration, $songs)
+                        );
+                    } catch (MpdException $e) {
+                        $playlistDurations[$pl['playlist']] = 0;
+                    }
+                }
+
                 $mpd->disconnect();
             } catch (MpdException $e) {
-                // playlists stays empty — form will show no options
+                // playlists stays empty — calendar shows no sidebar items
             }
 
             require VIEWS_DIR . '/admin/schedule.php';
@@ -781,21 +797,47 @@ class Router
             $auth->requireAuth();
             $auth->requireAdmin();
 
-            $playlist  = trim($_POST['playlist']    ?? '');
-            $dayRaw    = trim($_POST['day_of_week'] ?? '');
-            $dayOfWeek = $dayRaw !== '' ? (int) $dayRaw : null;
-            $timeOfDay = trim($_POST['time_of_day'] ?? '');
-            $user      = $auth->currentUser();
+            $playlist   = trim($_POST['playlist']    ?? '');
+            $dayRaw     = trim($_POST['day_of_week'] ?? '');
+            $dayOfWeek  = $dayRaw !== '' ? (int) $dayRaw : null;
+            $timeOfDay  = trim($_POST['time_of_day'] ?? '');
+            $loopAllDay = !empty($_POST['loop_all_day']);
+            $user       = $auth->currentUser();
 
             if ($playlist !== '' && $timeOfDay !== '') {
                 try {
-                    $db->createSchedule($playlist, $dayOfWeek, $timeOfDay, (int) $user['user_id']);
+                    $db->createSchedule(
+                        $playlist, $dayOfWeek, $timeOfDay,
+                        (int) $user['user_id'], $loopAllDay
+                    );
                 } catch (DatabaseException $e) {
                     error_log('Create schedule failed: ' . $e->getMessage());
                 }
             }
 
+            // Respond with 204 for fetch() callers; redirect for form callers
+            if (!empty($_SERVER['HTTP_X_REQUESTED_WITH'])) {
+                http_response_code(204);
+                exit;
+            }
             header('Location: /admin/schedule');
+            exit;
+        });
+
+        $this->post('/admin/schedule/move', function () use ($auth, $db) {
+            $auth->requireAuth();
+            $auth->requireAdmin();
+
+            $id        = (int) ($_POST['id'] ?? 0);
+            $dayRaw    = trim($_POST['day_of_week'] ?? '');
+            $dayOfWeek = $dayRaw !== '' ? (int) $dayRaw : null;
+            $timeOfDay = trim($_POST['time_of_day'] ?? '');
+
+            if ($id > 0 && $timeOfDay !== '') {
+                $db->updateScheduleTime($id, $dayOfWeek, $timeOfDay);
+            }
+
+            http_response_code(204);
             exit;
         });
 
@@ -808,6 +850,10 @@ class Router
                 $db->deleteSchedule($id);
             }
 
+            if (!empty($_SERVER['HTTP_X_REQUESTED_WITH'])) {
+                http_response_code(204);
+                exit;
+            }
             header('Location: /admin/schedule');
             exit;
         });
@@ -816,14 +862,33 @@ class Router
             $auth->requireAuth();
             $auth->requireAdmin();
 
-            $id     = (int)   ($_POST['id']     ?? 0);
-            $active = (bool)  ($_POST['active']  ?? 0);
+            $id     = (int)  ($_POST['id']     ?? 0);
+            $active = (bool) ($_POST['active']  ?? 0);
 
             if ($id > 0) {
                 $db->toggleScheduleActive($id, $active);
             }
 
+            if (!empty($_SERVER['HTTP_X_REQUESTED_WITH'])) {
+                http_response_code(204);
+                exit;
+            }
             header('Location: /admin/schedule');
+            exit;
+        });
+
+        $this->post('/admin/schedule/toggle-loop', function () use ($auth, $db) {
+            $auth->requireAuth();
+            $auth->requireAdmin();
+
+            $id          = (int)  ($_POST['id']          ?? 0);
+            $loopAllDay  = (bool) ($_POST['loop_all_day'] ?? 0);
+
+            if ($id > 0) {
+                $db->toggleScheduleLoop($id, $loopAllDay);
+            }
+
+            http_response_code(204);
             exit;
         });
     }
