@@ -6,6 +6,8 @@
 
     <nav class="admin-nav">
         <a href="/admin/queue">Queue</a>
+        <a href="/admin/playlists">Playlists</a>
+        <a href="/admin/schedule">Schedule</a>
         <a href="/admin/users">Users &amp; Invites</a>
     </nav>
 

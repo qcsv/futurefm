@@ -6,6 +6,9 @@
 
     <nav class="admin-nav">
         <a href="/admin">Dashboard</a>
+        <a href="/admin/queue">Queue</a>
+        <a href="/admin/playlists">Playlists</a>
+        <a href="/admin/schedule">Schedule</a>
         <a href="/admin/users">Users &amp; Invites</a>
     </nav>
 
@@ -232,10 +235,16 @@
                         <?php if (trim($item) === '') continue; ?>
                         <tr>
                             <td><?= htmlspecialchars($item) ?></td>
-                            <td>
+                            <td class="table-actions">
                                 <a href="/admin/queue?tab=<?= urlencode($tab) ?>&filter=<?= urlencode($item) ?>">
                                     View songs
                                 </a>
+                                <form method="post" action="/admin/queue/add-all" class="form-inline">
+                                    <input type="hidden" name="type"   value="<?= $tab === 'artist' ? 'artist' : 'album' ?>">
+                                    <input type="hidden" name="value"  value="<?= htmlspecialchars($item) ?>">
+                                    <input type="hidden" name="tab"    value="<?= htmlspecialchars($tab) ?>">
+                                    <button type="submit" class="btn-sm">+ Add All</button>
+                                </form>
                             </td>
                         </tr>
                     <?php endforeach; ?>
