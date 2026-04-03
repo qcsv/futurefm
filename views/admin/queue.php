@@ -9,6 +9,83 @@
         <a href="/admin/users">Users &amp; Invites</a>
     </nav>
 
+    <!-- ── Sticky stream player ──────────────────────────────── -->
+
+    <div class="player-bar player-bar--sticky" id="player-bar">
+        <audio id="radio-audio" preload="none">
+            <source src="<?= htmlspecialchars(STREAM_URL) ?>" type="audio/ogg">
+        </audio>
+
+        <div class="player-bar-left">
+            <button class="player-btn" id="play-btn" onclick="togglePlay()">&#9654;</button>
+        </div>
+
+        <div class="player-bar-center">
+            <span class="player-bar-title"  id="bar-title">—</span>
+            <span class="player-bar-artist" id="bar-artist"></span>
+        </div>
+
+        <div class="player-bar-right">
+            <button class="player-btn" id="mute-btn" onclick="toggleMute()">&#128266;</button>
+            <input
+                type="range"
+                id="volume-slider"
+                class="volume-slider"
+                min="0" max="1" step="0.05"
+                value="1"
+                oninput="setVolume(this.value)"
+            >
+        </div>
+    </div>
+
+    <script>
+        const audio     = document.getElementById('radio-audio');
+        const playBtn   = document.getElementById('play-btn');
+        const muteBtn   = document.getElementById('mute-btn');
+        const barTitle  = document.getElementById('bar-title');
+        const barArtist = document.getElementById('bar-artist');
+
+        let playing = false;
+
+        function togglePlay() {
+            if (playing) {
+                audio.pause();
+                audio.src = '';
+                playBtn.innerHTML = '&#9654;';
+                playing = false;
+            } else {
+                audio.src = '<?= htmlspecialchars(STREAM_URL) ?>';
+                audio.play();
+                playBtn.innerHTML = '&#9646;&#9646;';
+                playing = true;
+            }
+        }
+
+        function toggleMute() {
+            audio.muted = !audio.muted;
+            muteBtn.innerHTML = audio.muted ? '&#128263;' : '&#128266;';
+        }
+
+        function setVolume(val) {
+            audio.volume = val;
+            audio.muted  = false;
+            muteBtn.innerHTML = '&#128266;';
+        }
+
+        async function updateNowPlaying() {
+            try {
+                const res = await fetch('/now-playing');
+                if (!res.ok) return;
+                const data = await res.json();
+                barTitle.textContent  = data.title  || '—';
+                barArtist.textContent = data.artist || '';
+            } catch (e) {}
+        }
+
+        updateNowPlaying();
+        setInterval(updateNowPlaying, 10000);
+    </script>
+
     <?php if (!empty($mpdError)): ?>
         <p class="error">MPD unavailable: <?= htmlspecialchars($mpdError) ?></p>
     <?php else: ?>
