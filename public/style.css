@@ -511,3 +511,172 @@ body:has(.player-bar:not(.player-bar--sticky)) .site-main {
 .dashboard-status {
     margin-top: 1.5rem;
 }
+
+/* ── Small button variant ────────────────────────────────────────────────── */
+
+.btn-sm {
+    font-size: 0.8rem;
+    padding:   0.25rem 0.6rem;
+}
+
+/* ── Secondary button ────────────────────────────────────────────────────── */
+
+.btn-secondary {
+    background-color: var(--mid);
+    color:            var(--white);
+}
+
+.btn-secondary:hover {
+    background-color: #3a3a3a;
+}
+
+/* ── Table cell with multiple inline actions ─────────────────────────────── */
+
+.table-actions {
+    display:     flex;
+    gap:         0.5rem;
+    align-items: center;
+    flex-wrap:   wrap;
+}
+
+/* ── Inline form (fits inside table cells) ───────────────────────────────── */
+
+.form-inline {
+    display:        flex;
+    flex-direction: row;
+    gap:            0;
+    margin:         0;
+}
+
+/* ── Add-all bar above library song list ─────────────────────────────────── */
+
+.add-all-bar {
+    display:       flex;
+    align-items:   center;
+    gap:           1rem;
+    margin-bottom: 1rem;
+}
+
+/* ── Text colour helpers ─────────────────────────────────────────────────── */
+
+.text-grey {
+    color: var(--grey);
+}
+
+/* ── Schedule grid ───────────────────────────────────────────────────────── */
+
+.schedule-grid-wrap {
+    overflow-x:    auto;
+    margin-bottom: 2rem;
+}
+
+.schedule-grid {
+    width:           100%;
+    border-collapse: collapse;
+    font-size:       0.9rem;
+    min-width:       600px;
+}
+
+.schedule-grid th {
+    color:         var(--pink-light);
+    border-bottom: 2px solid var(--pink);
+    padding:       0.4rem 0.6rem;
+    text-align:    center;
+    white-space:   nowrap;
+}
+
+.schedule-grid td {
+    border:          1px solid var(--mid);
+    padding:         0.5rem 0.6rem;
+    vertical-align:  top;
+    min-width:       90px;
+    min-height:      60px;
+}
+
+.every-day-col {
+    background-color: rgba(255, 45, 120, 0.05);
+    border-left:      2px solid var(--pink) !important;
+}
+
+.sched-item {
+    background-color: var(--dark);
+    border-left:      3px solid var(--pink);
+    padding:          0.3rem 0.5rem;
+    margin-bottom:    0.4rem;
+    font-size:        0.8rem;
+}
+
+.sched-item--inactive {
+    border-left-color: var(--grey);
+    opacity:           0.5;
+}
+
+.sched-time {
+    display:     block;
+    color:       var(--pink);
+    font-weight: bold;
+}
+
+.sched-name {
+    display:   block;
+    color:     var(--white);
+    word-break: break-word;
+}
+
+.sched-empty {
+    color:     var(--grey);
+    font-size: 0.85rem;
+}
+
+.sched-row-inactive td {
+    opacity: 0.6;
+}
+
+/* ── Schedule entry form ─────────────────────────────────────────────────── */
+
+.schedule-form {
+    display:        flex;
+    flex-direction: row;
+    flex-wrap:      wrap;
+    gap:            1rem;
+    align-items:    flex-end;
+    margin-bottom:  2rem;
+}
+
+.schedule-form-row {
+    display:        flex;
+    flex-direction: column;
+    gap:            0.3rem;
+}
+
+.schedule-form-row select,
+.schedule-form-row input[type="time"] {
+    background-color: var(--dark);
+    border:           1px solid var(--mid);
+    color:            var(--white);
+    font-family:      var(--font);
+    font-size:        1rem;
+    padding:          0.5rem 0.75rem;
+}
+
+.schedule-form-row select:focus,
+.schedule-form-row input[type="time"]:focus {
+    outline:      none;
+    border-color: var(--pink);
+}
+
+/* ── Status badges ───────────────────────────────────────────────────────── */
+
+.status-active {
+    color: var(--success);
+}
+
+.status-inactive {
+    color: var(--grey);
+}
+
+/* ── Playlist header ─────────────────────────────────────────────────────── */
+
+.playlist-header h2 {
+    margin-bottom: 0.5rem;
+}

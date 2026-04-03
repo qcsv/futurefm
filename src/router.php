@@ -309,8 +309,21 @@ class Router
             }
 
             try {
-                $mpd  = new MPD(MPD_HOST, MPD_PORT);
+                $mpd = new MPD(MPD_HOST, MPD_PORT);
                 $mpd->connect();
+
+                // Fire any scheduled playlists due at this moment
+                try {
+                    foreach ($db->getDueSchedules() as $sched) {
+                        $mpd->clearQueue();
+                        $mpd->loadPlaylist($sched['playlist_name']);
+                        $mpd->play();
+                        $db->markScheduleRun((int) $sched['id']);
+                    }
+                } catch (\Throwable $e) {
+                    error_log('Schedule execution failed: ' . $e->getMessage());
+                }
+
                 $song   = $mpd->getCurrentSong();
                 $status = $mpd->getStatus();
                 $mpd->disconnect();
@@ -563,6 +576,254 @@ class Router
             }
 
             header('Location: /admin/queue');
+            exit;
+        });
+
+        // ── Add entire album or artist to queue in one shot ───────────────────
+
+        $this->post('/admin/queue/add-all', function () use ($auth) {
+            $auth->requireAuth();
+            $auth->requireAdmin();
+
+            $type  = trim($_POST['type']  ?? '');
+            $value = trim($_POST['value'] ?? '');
+
+            if ($value !== '' && in_array($type, ['album', 'artist'], true)) {
+                try {
+                    $mpd = new MPD(MPD_HOST, MPD_PORT);
+                    $mpd->connect();
+                    $mpd->findAdd($type, $value);
+                    $mpd->disconnect();
+                } catch (MpdException $e) {
+                    error_log('MPD findadd failed: ' . $e->getMessage());
+                }
+            }
+
+            $tab    = trim($_POST['tab']    ?? '');
+            $filter = trim($_POST['filter'] ?? '');
+            $search = trim($_POST['search'] ?? '');
+
+            $qs = http_build_query(array_filter([
+                'tab'    => $tab,
+                'filter' => $filter,
+                'search' => $search,
+            ]));
+
+            header('Location: /admin/queue' . ($qs !== '' ? '?' . $qs : ''));
+            exit;
+        });
+
+        // ── Playlists ─────────────────────────────────────────────────────────
+
+        $this->get('/admin/playlists', function () use ($auth) {
+            $auth->requireAuth();
+            $auth->requireAdmin();
+
+            $viewName      = trim($_GET['view']   ?? '');
+            $search        = trim($_GET['search'] ?? '');
+            $playlists     = [];
+            $playlistSongs = [];
+            $searchResults = [];
+            $mpdError      = null;
+
+            try {
+                $mpd = new MPD(MPD_HOST, MPD_PORT);
+                $mpd->connect();
+                $playlists = $mpd->listSavedPlaylists();
+
+                if ($viewName !== '') {
+                    $playlistSongs = $mpd->listPlaylistInfo($viewName);
+                }
+
+                if ($viewName !== '' && $search !== '') {
+                    $searchResults = $mpd->search('any', $search);
+                }
+
+                $mpd->disconnect();
+            } catch (MpdException $e) {
+                $mpdError = $e->getMessage();
+            }
+
+            require VIEWS_DIR . '/admin/playlists.php';
+        });
+
+        $this->post('/admin/playlists/create', function () use ($auth) {
+            $auth->requireAuth();
+            $auth->requireAdmin();
+
+            $name = trim($_POST['name'] ?? '');
+            if ($name !== '') {
+                try {
+                    $mpd = new MPD(MPD_HOST, MPD_PORT);
+                    $mpd->connect();
+                    $mpd->savePlaylist($name);
+                    $mpd->disconnect();
+                } catch (MpdException $e) {
+                    error_log('MPD save playlist failed: ' . $e->getMessage());
+                }
+            }
+
+            header('Location: /admin/playlists');
+            exit;
+        });
+
+        $this->post('/admin/playlists/delete', function () use ($auth) {
+            $auth->requireAuth();
+            $auth->requireAdmin();
+
+            $name = trim($_POST['name'] ?? '');
+            if ($name !== '') {
+                try {
+                    $mpd = new MPD(MPD_HOST, MPD_PORT);
+                    $mpd->connect();
+                    $mpd->deletePlaylist($name);
+                    $mpd->disconnect();
+                } catch (MpdException $e) {
+                    error_log('MPD delete playlist failed: ' . $e->getMessage());
+                }
+            }
+
+            header('Location: /admin/playlists');
+            exit;
+        });
+
+        $this->post('/admin/playlists/load', function () use ($auth) {
+            $auth->requireAuth();
+            $auth->requireAdmin();
+
+            $name = trim($_POST['name'] ?? '');
+            if ($name !== '') {
+                try {
+                    $mpd = new MPD(MPD_HOST, MPD_PORT);
+                    $mpd->connect();
+                    $mpd->loadPlaylist($name);
+                    $mpd->disconnect();
+                } catch (MpdException $e) {
+                    error_log('MPD load playlist failed: ' . $e->getMessage());
+                }
+            }
+
+            header('Location: /admin/queue');
+            exit;
+        });
+
+        $this->post('/admin/playlists/remove-song', function () use ($auth) {
+            $auth->requireAuth();
+            $auth->requireAdmin();
+
+            $name = trim($_POST['name'] ?? '');
+            $pos  = (int) ($_POST['pos'] ?? -1);
+
+            if ($name !== '' && $pos >= 0) {
+                try {
+                    $mpd = new MPD(MPD_HOST, MPD_PORT);
+                    $mpd->connect();
+                    $mpd->playlistDelete($name, $pos);
+                    $mpd->disconnect();
+                } catch (MpdException $e) {
+                    error_log('MPD playlistdelete failed: ' . $e->getMessage());
+                }
+            }
+
+            header('Location: /admin/playlists?view=' . urlencode($name));
+            exit;
+        });
+
+        $this->post('/admin/playlists/add-song', function () use ($auth) {
+            $auth->requireAuth();
+            $auth->requireAdmin();
+
+            $playlist = trim($_POST['playlist'] ?? '');
+            $uri      = trim($_POST['uri']      ?? '');
+            $search   = trim($_POST['search']   ?? '');
+
+            if ($playlist !== '' && $uri !== '') {
+                try {
+                    $mpd = new MPD(MPD_HOST, MPD_PORT);
+                    $mpd->connect();
+                    $mpd->playlistAdd($playlist, $uri);
+                    $mpd->disconnect();
+                } catch (MpdException $e) {
+                    error_log('MPD playlistadd failed: ' . $e->getMessage());
+                }
+            }
+
+            $qs = http_build_query(array_filter([
+                'view'   => $playlist,
+                'search' => $search,
+            ]));
+            header('Location: /admin/playlists?' . $qs);
+            exit;
+        });
+
+        // ── Schedule ──────────────────────────────────────────────────────────
+
+        $this->get('/admin/schedule', function () use ($auth, $db) {
+            $auth->requireAuth();
+            $auth->requireAdmin();
+
+            $schedules = $db->getSchedules();
+            $playlists = [];
+
+            try {
+                $mpd = new MPD(MPD_HOST, MPD_PORT);
+                $mpd->connect();
+                $playlists = $mpd->listSavedPlaylists();
+                $mpd->disconnect();
+            } catch (MpdException $e) {
+                // playlists stays empty — form will show no options
+            }
+
+            require VIEWS_DIR . '/admin/schedule.php';
+        });
+
+        $this->post('/admin/schedule/create', function () use ($auth, $db) {
+            $auth->requireAuth();
+            $auth->requireAdmin();
+
+            $playlist  = trim($_POST['playlist']    ?? '');
+            $dayRaw    = trim($_POST['day_of_week'] ?? '');
+            $dayOfWeek = $dayRaw !== '' ? (int) $dayRaw : null;
+            $timeOfDay = trim($_POST['time_of_day'] ?? '');
+            $user      = $auth->currentUser();
+
+            if ($playlist !== '' && $timeOfDay !== '') {
+                try {
+                    $db->createSchedule($playlist, $dayOfWeek, $timeOfDay, (int) $user['user_id']);
+                } catch (DatabaseException $e) {
+                    error_log('Create schedule failed: ' . $e->getMessage());
+                }
+            }
+
+            header('Location: /admin/schedule');
+            exit;
+        });
+
+        $this->post('/admin/schedule/delete', function () use ($auth, $db) {
+            $auth->requireAuth();
+            $auth->requireAdmin();
+
+            $id = (int) ($_POST['id'] ?? 0);
+            if ($id > 0) {
+                $db->deleteSchedule($id);
+            }
+
+            header('Location: /admin/schedule');
+            exit;
+        });
+
+        $this->post('/admin/schedule/toggle', function () use ($auth, $db) {
+            $auth->requireAuth();
+            $auth->requireAdmin();
+
+            $id     = (int)   ($_POST['id']     ?? 0);
+            $active = (bool)  ($_POST['active']  ?? 0);
+
+            if ($id > 0) {
+                $db->toggleScheduleActive($id, $active);
+            }
+
+            header('Location: /admin/schedule');
             exit;
         });
     }

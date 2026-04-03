@@ -389,6 +389,26 @@ class MPD {
         return $this->parseMultipleSongs($raw);
     }
 
+    /**
+     * Find songs matching a tag/value and add them directly to the queue.
+     *
+     * Equivalent to running find + add but more efficient (single MPD command).
+     * e.g. findAdd('album', 'Abbey Road')
+     */
+    public function findAdd(string $tag, string $query): void {
+        $this->command('findadd ' . $this->escape($tag) . ' ' . $this->escape($query));
+    }
+
+    /** Add a single file URI to a saved playlist by name. */
+    public function playlistAdd(string $name, string $uri): void {
+        $this->command('playlistadd ' . $this->escape($name) . ' ' . $this->escape($uri));
+    }
+
+    /** Remove a song from a saved playlist by its position (0-based). */
+    public function playlistDelete(string $name, int $pos): void {
+        $this->command('playlistdelete ' . $this->escape($name) . " {$pos}");
+    }
+
     // -----------------------------------------------------------------------
     // Music library
     // -----------------------------------------------------------------------

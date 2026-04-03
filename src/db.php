@@ -37,6 +37,18 @@ class Database
 
             // Enforce foreign key constraints (SQLite disables them by default)
             $this->pdo->exec('PRAGMA foreign_keys=ON');
+
+            // Ensure schedule table exists (migration-safe)
+            $this->pdo->exec("CREATE TABLE IF NOT EXISTS schedule (
+                id            INTEGER PRIMARY KEY AUTOINCREMENT,
+                playlist_name TEXT NOT NULL,
+                day_of_week   INTEGER,
+                time_of_day   TEXT NOT NULL,
+                active        INTEGER NOT NULL DEFAULT 1,
+                last_run_at   INTEGER,
+                created_by    INTEGER NOT NULL REFERENCES users(id),
+                created_at    INTEGER NOT NULL DEFAULT (unixepoch())
+            )");
         } catch (PDOException $e) {
             throw new DatabaseException('Could not open database: ' . $e->getMessage());
         }
@@ -498,5 +510,97 @@ class Database
                  url       = excluded.url,
                  cached_at = unixepoch()'
         )->execute([$this->artKey($artist, $album), $url]);
+    }
+
+    // -------------------------------------------------------------------------
+    // Schedule
+    // -------------------------------------------------------------------------
+
+    /**
+     * Return all schedule entries ordered by day and time.
+     */
+    public function getSchedules(): array
+    {
+        $stmt = $this->pdo->query(
+            'SELECT s.*, u.username AS created_by_username
+             FROM schedule s
+             JOIN users u ON u.id = s.created_by
+             ORDER BY s.day_of_week IS NULL DESC, s.day_of_week, s.time_of_day'
+        );
+        return $stmt->fetchAll();
+    }
+
+    /**
+     * Create a new schedule entry.
+     *
+     * @param  string   $playlist   MPD playlist name to load.
+     * @param  int|null $dayOfWeek  0=Sunday…6=Saturday, or null for every day.
+     * @param  string   $timeOfDay  "HH:MM" 24-hour format.
+     * @param  int      $userId     Admin user creating the entry.
+     * @return int New entry ID.
+     */
+    public function createSchedule(
+        string $playlist,
+        ?int   $dayOfWeek,
+        string $timeOfDay,
+        int    $userId
+    ): int {
+        $stmt = $this->pdo->prepare(
+            'INSERT INTO schedule (playlist_name, day_of_week, time_of_day, created_by)
+             VALUES (?, ?, ?, ?)'
+        );
+        $stmt->execute([$playlist, $dayOfWeek, $timeOfDay, $userId]);
+        return (int) $this->pdo->lastInsertId();
+    }
+
+    /**
+     * Delete a schedule entry.
+     */
+    public function deleteSchedule(int $id): void
+    {
+        $this->pdo->prepare('DELETE FROM schedule WHERE id = ?')->execute([$id]);
+    }
+
+    /**
+     * Toggle the active flag on a schedule entry.
+     */
+    public function toggleScheduleActive(int $id, bool $active): void
+    {
+        $this->pdo->prepare(
+            'UPDATE schedule SET active = ? WHERE id = ?'
+        )->execute([$active ? 1 : 0, $id]);
+    }
+
+    /**
+     * Return schedules that are due to fire right now.
+     *
+     * A schedule is due when its day/time matches the current moment and it
+     * has not already been triggered within the last 5 minutes.
+     */
+    public function getDueSchedules(): array
+    {
+        $dow   = (int) date('w');     // 0=Sun … 6=Sat
+        $hhmm  = date('H:i');         // "HH:MM"
+        $since = time() - 300;        // don't re-fire within 5 minutes
+
+        $stmt = $this->pdo->prepare(
+            'SELECT * FROM schedule
+             WHERE active = 1
+               AND (day_of_week IS NULL OR day_of_week = ?)
+               AND time_of_day = ?
+               AND (last_run_at IS NULL OR last_run_at < ?)'
+        );
+        $stmt->execute([$dow, $hhmm, $since]);
+        return $stmt->fetchAll();
+    }
+
+    /**
+     * Mark a schedule entry as just executed.
+     */
+    public function markScheduleRun(int $id): void
+    {
+        $this->pdo->prepare(
+            'UPDATE schedule SET last_run_at = unixepoch() WHERE id = ?'
+        )->execute([$id]);
     }
 }

@@ -6,6 +6,18 @@
  * to be defined in the including scope.
  */
 ?>
+<?php if ($tab !== '' && $filter !== ''): ?>
+    <div class="add-all-bar">
+        <form method="post" action="/admin/queue/add-all" class="form-inline">
+            <input type="hidden" name="type"   value="<?= $tab === 'artist' ? 'artist' : 'album' ?>">
+            <input type="hidden" name="value"  value="<?= htmlspecialchars($filter) ?>">
+            <input type="hidden" name="tab"    value="<?= htmlspecialchars($tab) ?>">
+            <input type="hidden" name="filter" value="<?= htmlspecialchars($filter) ?>">
+            <button type="submit">+ Add All to Queue</button>
+        </form>
+        <span class="library-meta"><?= count($librarySongs) ?> song(s)</span>
+    </div>
+<?php endif; ?>
 <table class="data-table">
     <thead>
         <tr>
