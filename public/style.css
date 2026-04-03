@@ -323,6 +323,50 @@ code {
     margin-bottom: 1rem;
 }
 
+/* ── Library browser ─────────────────────────────────────────────────────── */
+
+.library-heading {
+    margin-top:    2.5rem;
+    padding-top:   1.5rem;
+    border-top:    1px solid var(--mid);
+}
+
+.library-search {
+    margin-bottom: 1rem;
+}
+
+.library-tabs {
+    display:       flex;
+    gap:           0;
+    margin-bottom: 1.5rem;
+    border-bottom: 2px solid var(--pink);
+}
+
+.library-tabs a {
+    padding:          0.4rem 1rem;
+    color:            var(--grey);
+    text-decoration:  none;
+    border:           1px solid var(--mid);
+    border-bottom:    none;
+    margin-right:     4px;
+}
+
+.library-tabs a:hover {
+    color: var(--pink-light);
+}
+
+.library-tabs a.active {
+    color:            var(--pink);
+    background-color: var(--dark);
+    border-color:     var(--pink);
+}
+
+.library-meta {
+    color:         var(--grey);
+    font-size:     0.9rem;
+    margin-bottom: 1rem;
+}
+
 /* ── Dashboard status ────────────────────────────────────────────────────── */
 
 .dashboard-status {

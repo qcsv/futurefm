@@ -365,12 +365,14 @@ class Router
             $auth->requireAuth();
             $auth->requireAdmin();
 
+            // ── Current queue and playback status ─────────────────────────────
+
             try {
-                $mpd      = new MPD(MPD_HOST, MPD_PORT);
+                $mpd     = new MPD(MPD_HOST, MPD_PORT);
                 $mpd->connect();
-                $queue    = $mpd->getPlaylist();
-                $current  = $mpd->getCurrentSong();
-                $status   = $mpd->getStatus();
+                $queue   = $mpd->getPlaylist();
+                $current = $mpd->getCurrentSong();
+                $status  = $mpd->getStatus();
                 $mpd->disconnect();
             } catch (MpdException $e) {
                 $mpdError = $e->getMessage();
@@ -379,7 +381,81 @@ class Router
                 $status   = null;
             }
 
+            // ── Library browser ───────────────────────────────────────────────
+
+            $tab          = trim($_GET['tab']    ?? '');
+            $filter       = trim($_GET['filter'] ?? '');
+            $search       = trim($_GET['search'] ?? '');
+            $librarySongs = [];
+            $libraryList  = [];
+            $libraryError = null;
+
+            try {
+                $mpd = new MPD(MPD_HOST, MPD_PORT);
+                $mpd->connect();
+
+                if ($search !== '') {
+                    // Search across all tags
+                    $librarySongs = $mpd->search('any', $search);
+
+                } elseif ($tab === 'artist') {
+                    if ($filter !== '') {
+                        // Songs by this artist
+                        $librarySongs = $mpd->find('artist', $filter);
+                    } else {
+                        // List all artists
+                        $libraryList = $mpd->listTag('artist');
+                    }
+
+                } elseif ($tab === 'album') {
+                    if ($filter !== '') {
+                        // Songs on this album
+                        $librarySongs = $mpd->find('album', $filter);
+                    } else {
+                        // List all albums
+                        $libraryList = $mpd->listTag('album');
+                    }
+                }
+                // Default (no tab, no search) — show nothing until user picks a tab
+
+                $mpd->disconnect();
+            } catch (MpdException $e) {
+                $libraryError = $e->getMessage();
+            }
+
             require VIEWS_DIR . '/admin/queue.php';
+        });
+
+        $this->post('/admin/queue/add', function () use ($auth) {
+            $auth->requireAuth();
+            $auth->requireAdmin();
+
+            $uri = trim($_POST['uri'] ?? '');
+
+            if ($uri !== '') {
+                try {
+                    $mpd = new MPD(MPD_HOST, MPD_PORT);
+                    $mpd->connect();
+                    $mpd->add($uri);
+                    $mpd->disconnect();
+                } catch (MpdException $e) {
+                    error_log('MPD add failed: ' . $e->getMessage());
+                }
+            }
+
+            // Preserve the current tab/filter/search state on redirect
+            $tab    = trim($_POST['tab']    ?? '');
+            $filter = trim($_POST['filter'] ?? '');
+            $search = trim($_POST['search'] ?? '');
+
+            $qs = http_build_query(array_filter([
+                'tab'    => $tab,
+                'filter' => $filter,
+                'search' => $search,
+            ]));
+
+            header('Location: /admin/queue' . ($qs !== '' ? '?' . $qs : ''));
+            exit;
         });
 
         $this->post('/admin/queue/action', function () use ($auth) {

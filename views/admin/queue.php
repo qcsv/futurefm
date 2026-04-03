@@ -58,7 +58,7 @@
             </div>
         <?php endif; ?>
 
-        <!-- ── Queue ─────────────────────────────────────────── -->
+        <!-- ── Current queue ─────────────────────────────────── -->
 
         <?php if (empty($queue)): ?>
             <p>The queue is empty.</p>
@@ -91,6 +91,96 @@
                     <?php endforeach; ?>
                 </tbody>
             </table>
+        <?php endif; ?>
+
+        <!-- ── Library browser ───────────────────────────────── -->
+
+        <h2 class="library-heading">Library</h2>
+
+        <!-- Search bar -->
+        <form method="get" action="/admin/queue" class="inline-form library-search">
+            <input
+                type="text"
+                name="search"
+                placeholder="Search songs, artists, albums..."
+                value="<?= htmlspecialchars($search) ?>"
+            >
+            <button type="submit">Search</button>
+            <?php if ($search !== ''): ?>
+                <a href="/admin/queue" class="btn">Clear</a>
+            <?php endif; ?>
+        </form>
+
+        <!-- Tab navigation -->
+        <?php if ($search === ''): ?>
+            <nav class="library-tabs">
+                <a href="/admin/queue"
+                   class="<?= $tab === '' ? 'active' : '' ?>">Browse</a>
+                <a href="/admin/queue?tab=artist"
+                   class="<?= $tab === 'artist' && $filter === '' ? 'active' : '' ?>">Artists</a>
+                <a href="/admin/queue?tab=album"
+                   class="<?= $tab === 'album'  && $filter === '' ? 'active' : '' ?>">Albums</a>
+            </nav>
+        <?php endif; ?>
+
+        <?php if (!empty($libraryError)): ?>
+            <p class="error">Library unavailable: <?= htmlspecialchars($libraryError) ?></p>
+
+        <?php elseif ($search !== ''): ?>
+            <!-- Search results -->
+            <p class="library-meta">
+                <?= count($librarySongs) ?> result(s) for
+                &ldquo;<?= htmlspecialchars($search) ?>&rdquo;
+            </p>
+            <?php if (empty($librarySongs)): ?>
+                <p>No songs found.</p>
+            <?php else: ?>
+                <?php include VIEWS_DIR . '/admin/_library_songs.php'; ?>
+            <?php endif; ?>
+
+        <?php elseif ($tab === ''): ?>
+            <p class="library-meta">Pick a tab or search to browse the library.</p>
+
+        <?php elseif ($filter === '' && !empty($libraryList)): ?>
+            <!-- Artist or album list -->
+            <table class="data-table">
+                <thead>
+                    <tr>
+                        <th><?= $tab === 'artist' ? 'Artist' : 'Album' ?></th>
+                        <th></th>
+                    </tr>
+                </thead>
+                <tbody>
+                    <?php foreach ($libraryList as $item): ?>
+                        <?php if (trim($item) === '') continue; ?>
+                        <tr>
+                            <td><?= htmlspecialchars($item) ?></td>
+                            <td>
+                                <a href="/admin/queue?tab=<?= urlencode($tab) ?>&filter=<?= urlencode($item) ?>">
+                                    View songs
+                                </a>
+                            </td>
+                        </tr>
+                    <?php endforeach; ?>
+                </tbody>
+            </table>
+
+        <?php elseif ($filter !== '' && !empty($librarySongs)): ?>
+            <!-- Songs filtered by artist or album -->
+            <p class="library-meta">
+                <?php if ($tab === 'artist'): ?>
+                    Songs by <strong><?= htmlspecialchars($filter) ?></strong>
+                    &mdash; <a href="/admin/queue?tab=artist">Back to artists</a>
+                <?php else: ?>
+                    Album: <strong><?= htmlspecialchars($filter) ?></strong>
+                    &mdash; <a href="/admin/queue?tab=album">Back to albums</a>
+                <?php endif; ?>
+            </p>
+            <?php include VIEWS_DIR . '/admin/_library_songs.php'; ?>
+
+        <?php elseif ($filter !== ''): ?>
+            <p>No songs found.</p>
+
         <?php endif; ?>
 
     <?php endif; ?>
