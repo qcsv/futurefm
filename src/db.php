@@ -59,6 +59,12 @@ class Database
             } catch (\PDOException $e) {
                 // Column already exists — nothing to do
             }
+
+            // Per-day settings table (loop-last toggle per day of week)
+            $this->pdo->exec("CREATE TABLE IF NOT EXISTS schedule_day_settings (
+                day_of_week  INTEGER PRIMARY KEY,
+                loop_last    INTEGER NOT NULL DEFAULT 0
+            )");
         } catch (PDOException $e) {
             throw new DatabaseException('Could not open database: ' . $e->getMessage());
         }
@@ -620,7 +626,7 @@ class Database
         $stmt = $this->pdo->prepare(
             'SELECT * FROM schedule
              WHERE active = 1
-               AND (day_of_week IS NULL OR day_of_week = ?)
+               AND day_of_week = ?
                AND time_of_day = ?
                AND (last_run_at IS NULL OR last_run_at < ?)'
         );
@@ -636,5 +642,66 @@ class Database
         $this->pdo->prepare(
             'UPDATE schedule SET last_run_at = unixepoch() WHERE id = ?'
         )->execute([$id]);
+    }
+
+    // -------------------------------------------------------------------------
+    // Schedule day settings
+    // -------------------------------------------------------------------------
+
+    /**
+     * Get loop-last settings for all days of the week.
+     *
+     * @return array<int, bool> day_of_week => loop_last
+     */
+    public function getDayLoopSettings(): array
+    {
+        $rows = $this->pdo->query(
+            'SELECT day_of_week, loop_last FROM schedule_day_settings'
+        )->fetchAll();
+        $map = [];
+        foreach ($rows as $r) {
+            $map[(int) $r['day_of_week']] = (bool) $r['loop_last'];
+        }
+        return $map;
+    }
+
+    /**
+     * Toggle loop-last for a specific day of the week.
+     */
+    public function setDayLoopLast(int $dayOfWeek, bool $loopLast): void
+    {
+        $this->pdo->prepare(
+            'INSERT INTO schedule_day_settings (day_of_week, loop_last)
+             VALUES (?, ?)
+             ON CONFLICT(day_of_week) DO UPDATE SET loop_last = excluded.loop_last'
+        )->execute([$dayOfWeek, $loopLast ? 1 : 0]);
+    }
+
+    /**
+     * Check whether a schedule entry is the last one for its day.
+     */
+    public function isLastScheduleForDay(int $scheduleId, int $dayOfWeek): bool
+    {
+        $stmt = $this->pdo->prepare(
+            'SELECT COUNT(*) FROM schedule
+             WHERE active = 1
+               AND day_of_week = ?
+               AND time_of_day > (SELECT time_of_day FROM schedule WHERE id = ?)'
+        );
+        $stmt->execute([$dayOfWeek, $scheduleId]);
+        return (int) $stmt->fetchColumn() === 0;
+    }
+
+    /**
+     * Check if loop-last is enabled for a given day.
+     */
+    public function isDayLoopLastEnabled(int $dayOfWeek): bool
+    {
+        $stmt = $this->pdo->prepare(
+            'SELECT loop_last FROM schedule_day_settings WHERE day_of_week = ?'
+        );
+        $stmt->execute([$dayOfWeek]);
+        $val = $stmt->fetchColumn();
+        return $val !== false && (bool) $val;
     }
 }

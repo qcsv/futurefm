@@ -317,8 +317,11 @@ class Router
                     foreach ($db->getDueSchedules() as $sched) {
                         $mpd->clearQueue();
                         $mpd->loadPlaylist($sched['playlist_name']);
-                        // Loop-all-day entries keep repeating; others play through once
-                        $mpd->setRepeat((bool) $sched['loop_all_day']);
+                        // Loop the last playlist of the day if the day's loop-last toggle is on
+                        $dow = (int) $sched['day_of_week'];
+                        $shouldLoop = $db->isDayLoopLastEnabled($dow)
+                            && $db->isLastScheduleForDay((int) $sched['id'], $dow);
+                        $mpd->setRepeat($shouldLoop);
                         $mpd->play();
                         $db->markScheduleRun((int) $sched['id']);
                     }
@@ -765,6 +768,7 @@ class Router
             $auth->requireAdmin();
 
             $schedules         = $db->getSchedules();
+            $dayLoopSettings   = $db->getDayLoopSettings();
             $playlists         = [];
             $playlistDurations = []; // name => total seconds
 
@@ -801,14 +805,13 @@ class Router
             $dayRaw     = trim($_POST['day_of_week'] ?? '');
             $dayOfWeek  = $dayRaw !== '' ? (int) $dayRaw : null;
             $timeOfDay  = trim($_POST['time_of_day'] ?? '');
-            $loopAllDay = !empty($_POST['loop_all_day']);
             $user       = $auth->currentUser();
 
-            if ($playlist !== '' && $timeOfDay !== '') {
+            if ($playlist !== '' && $timeOfDay !== '' && $dayOfWeek !== null) {
                 try {
                     $db->createSchedule(
                         $playlist, $dayOfWeek, $timeOfDay,
-                        (int) $user['user_id'], $loopAllDay
+                        (int) $user['user_id'], false
                     );
                 } catch (DatabaseException $e) {
                     error_log('Create schedule failed: ' . $e->getMessage());
@@ -833,7 +836,7 @@ class Router
             $dayOfWeek = $dayRaw !== '' ? (int) $dayRaw : null;
             $timeOfDay = trim($_POST['time_of_day'] ?? '');
 
-            if ($id > 0 && $timeOfDay !== '') {
+            if ($id > 0 && $timeOfDay !== '' && $dayOfWeek !== null) {
                 $db->updateScheduleTime($id, $dayOfWeek, $timeOfDay);
             }
 
@@ -877,15 +880,15 @@ class Router
             exit;
         });
 
-        $this->post('/admin/schedule/toggle-loop', function () use ($auth, $db) {
+        $this->post('/admin/schedule/toggle-day-loop', function () use ($auth, $db) {
             $auth->requireAuth();
             $auth->requireAdmin();
 
-            $id          = (int)  ($_POST['id']          ?? 0);
-            $loopAllDay  = (bool) ($_POST['loop_all_day'] ?? 0);
+            $dayOfWeek = (int)  ($_POST['day_of_week'] ?? -1);
+            $loopLast  = (bool) ($_POST['loop_last']   ?? 0);
 
-            if ($id > 0) {
-                $db->toggleScheduleLoop($id, $loopAllDay);
+            if ($dayOfWeek >= 0 && $dayOfWeek <= 6) {
+                $db->setDayLoopLast($dayOfWeek, $loopLast);
             }
 
             http_response_code(204);
