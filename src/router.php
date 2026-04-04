@@ -247,7 +247,8 @@ class Router
             }
 
             // Query MusicBrainz for a release ID
-            $url = '';
+            $url   = '';
+            $error = '';
             try {
                 $query = http_build_query([
                     'query'  => 'artist:"' . $artist . '" AND release:"' . $album . '"',
@@ -255,7 +256,7 @@ class Router
                     'fmt'    => 'json',
                 ]);
 
-                $context = stream_context_create([
+                $mbContext = stream_context_create([
                     'http' => [
                         'header'  => "User-Agent: FutureRadio/1.0 (futureradio.net)\r\n",
                         'timeout' => 5,
@@ -265,17 +266,23 @@ class Router
                 $response = @file_get_contents(
                     'https://musicbrainz.org/ws/2/release/?' . $query,
                     false,
-                    $context
+                    $mbContext
                 );
 
-                if ($response !== false) {
-                    $data = json_decode($response, true);
+                if ($response === false) {
+                    $error = 'MusicBrainz request failed';
+                    error_log("Album art: MusicBrainz request failed for artist=\"{$artist}\" album=\"{$album}\"");
+                } else {
+                    $data      = json_decode($response, true);
                     $releaseId = $data['releases'][0]['id'] ?? null;
 
-                    if ($releaseId !== null) {
-                        // Verify cover art exists on Cover Art Archive
-                        $artCheck = @file_get_contents(
-                            "https://coverartarchive.org/release/{$releaseId}/front-250",
+                    if ($releaseId === null) {
+                        $error = 'No MusicBrainz release found';
+                    } else {
+                        // Use the Cover Art Archive index JSON to check existence without
+                        // downloading the full image.
+                        $caaIndex = @file_get_contents(
+                            "https://coverartarchive.org/release/{$releaseId}",
                             false,
                             stream_context_create(['http' => [
                                 'timeout' => 5,
@@ -283,19 +290,22 @@ class Router
                             ]])
                         );
 
-                        if ($artCheck !== false) {
+                        if ($caaIndex !== false) {
                             $url = "https://coverartarchive.org/release/{$releaseId}/front-250";
+                        } else {
+                            $error = 'No cover art found on Cover Art Archive';
                         }
                     }
                 }
             } catch (\Throwable $e) {
+                $error = 'Exception: ' . $e->getMessage();
                 error_log('Album art lookup failed: ' . $e->getMessage());
             }
 
             // Cache the result (including empty string for misses)
             $db->cacheAlbumArt($artist, $album, $url);
 
-            echo json_encode(['url' => $url]);
+            echo json_encode(['url' => $url, 'error' => $error]);
             exit;
         });
 

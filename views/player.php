@@ -10,8 +10,10 @@
                 src=""
                 alt="Album art"
                 style="display:none"
+                onerror="this.style.display='none'; artHolder.style.display='flex';"
             >
             <div class="album-art-placeholder" id="album-art-placeholder">&#9835;</div>
+            <div class="album-art-error" id="album-art-error" style="display:none" title=""></div>
         </div>
 
         <div class="now-playing-info">
@@ -62,6 +64,7 @@
     const trackAlbum  = document.getElementById('track-album');
     const albumArt    = document.getElementById('album-art');
     const artHolder   = document.getElementById('album-art-placeholder');
+    const artError    = document.getElementById('album-art-error');
 
     let playing     = false;
     let lastArtKey  = '';
@@ -107,19 +110,27 @@
                 '/album-art?artist=' + encodeURIComponent(artist) +
                 '&album='  + encodeURIComponent(album)
             );
-            if (!res.ok) return;
+            if (!res.ok) {
+                console.warn('Album art fetch failed: HTTP ' + res.status);
+                return;
+            }
             const data = await res.json();
 
             if (data.url) {
-                albumArt.src           = data.url;
-                albumArt.style.display = 'block';
+                artError.style.display  = 'none';
+                albumArt.src            = data.url;
+                albumArt.style.display  = 'block';
                 artHolder.style.display = 'none';
             } else {
+                const reason = data.error || 'No art available';
+                console.warn('Album art unavailable:', reason);
+                artError.title          = reason;
+                artError.style.display  = 'block';
                 albumArt.style.display  = 'none';
                 artHolder.style.display = 'flex';
             }
         } catch (e) {
-            // silently fail
+            console.warn('Album art fetch error:', e);
         }
     }
 
