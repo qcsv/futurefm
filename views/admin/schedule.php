@@ -218,6 +218,7 @@ function onSidebarDragStart(event, playlist, durationSecs) {
     };
     event.currentTarget.classList.add('dragging');
     event.dataTransfer.effectAllowed = 'copy';
+    event.dataTransfer.setData('text/plain', playlist);
 }
 
 // ── Existing block drag ─────────────────────────────────────────────────────
@@ -226,6 +227,7 @@ function onBlockDragStart(event, id, playlist, durationSecs) {
     event.stopPropagation();
     drag = { type: 'move', id, playlist, durationSecs };
     event.dataTransfer.effectAllowed = 'move';
+    event.dataTransfer.setData('text/plain', String(id));
 }
 
 // ── Drop column handlers ────────────────────────────────────────────────────
