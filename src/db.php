@@ -45,10 +45,20 @@ class Database
                 day_of_week   INTEGER,
                 time_of_day   TEXT NOT NULL,
                 active        INTEGER NOT NULL DEFAULT 1,
+                loop_all_day  INTEGER NOT NULL DEFAULT 0,
                 last_run_at   INTEGER,
                 created_by    INTEGER NOT NULL REFERENCES users(id),
                 created_at    INTEGER NOT NULL DEFAULT (unixepoch())
             )");
+
+            // Migrate existing installs: add loop_all_day if missing
+            try {
+                $this->pdo->exec(
+                    'ALTER TABLE schedule ADD COLUMN loop_all_day INTEGER NOT NULL DEFAULT 0'
+                );
+            } catch (\PDOException $e) {
+                // Column already exists — nothing to do
+            }
         } catch (PDOException $e) {
             throw new DatabaseException('Could not open database: ' . $e->getMessage());
         }
@@ -537,20 +547,44 @@ class Database
      * @param  int|null $dayOfWeek  0=Sunday…6=Saturday, or null for every day.
      * @param  string   $timeOfDay  "HH:MM" 24-hour format.
      * @param  int      $userId     Admin user creating the entry.
+     * @param  bool     $loopAllDay Whether to repeat the playlist on a loop all day.
      * @return int New entry ID.
      */
     public function createSchedule(
         string $playlist,
         ?int   $dayOfWeek,
         string $timeOfDay,
-        int    $userId
+        int    $userId,
+        bool   $loopAllDay = false
     ): int {
         $stmt = $this->pdo->prepare(
-            'INSERT INTO schedule (playlist_name, day_of_week, time_of_day, created_by)
-             VALUES (?, ?, ?, ?)'
+            'INSERT INTO schedule (playlist_name, day_of_week, time_of_day, loop_all_day, created_by)
+             VALUES (?, ?, ?, ?, ?)'
         );
-        $stmt->execute([$playlist, $dayOfWeek, $timeOfDay, $userId]);
+        $stmt->execute([$playlist, $dayOfWeek, $timeOfDay, $loopAllDay ? 1 : 0, $userId]);
         return (int) $this->pdo->lastInsertId();
+    }
+
+    /**
+     * Move a schedule entry to a new day/time (used by drag-and-drop).
+     *
+     * Resets last_run_at so it can fire again at the new time.
+     */
+    public function updateScheduleTime(int $id, ?int $dayOfWeek, string $timeOfDay): void
+    {
+        $this->pdo->prepare(
+            'UPDATE schedule SET day_of_week = ?, time_of_day = ?, last_run_at = NULL WHERE id = ?'
+        )->execute([$dayOfWeek, $timeOfDay, $id]);
+    }
+
+    /**
+     * Toggle the loop_all_day flag on a schedule entry.
+     */
+    public function toggleScheduleLoop(int $id, bool $loopAllDay): void
+    {
+        $this->pdo->prepare(
+            'UPDATE schedule SET loop_all_day = ? WHERE id = ?'
+        )->execute([$loopAllDay ? 1 : 0, $id]);
     }
 
     /**
