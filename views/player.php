@@ -48,6 +48,14 @@
             value="1"
             oninput="setVolume(this.value)"
         >
+        <script>
+            (function() {
+                var saved = localStorage.getItem('volume');
+                if (saved !== null) {
+                    document.getElementById('volume-slider').value = saved;
+                }
+            })();
+        </script>
     </div>
 </div>
 
@@ -66,6 +74,21 @@
     let playing     = false;
     let lastArtKey  = '';
 
+    // Restore saved volume on load
+    (function() {
+        const savedVolume = localStorage.getItem('volume');
+        const savedMuted  = localStorage.getItem('muted');
+        const slider      = document.getElementById('volume-slider');
+        if (savedVolume !== null) {
+            audio.volume  = parseFloat(savedVolume);
+            slider.value  = savedVolume;
+        }
+        if (savedMuted === 'true') {
+            audio.muted       = true;
+            muteBtn.innerHTML = '&#128263;';
+        }
+    })();
+
     function togglePlay() {
         if (playing) {
             audio.pause();
@@ -83,12 +106,15 @@
     function toggleMute() {
         audio.muted = !audio.muted;
         muteBtn.innerHTML = audio.muted ? '&#128263;' : '&#128266;';
+        localStorage.setItem('muted', audio.muted);
     }
 
     function setVolume(val) {
         audio.volume = val;
         audio.muted  = false;
         muteBtn.innerHTML = '&#128266;';
+        localStorage.setItem('volume', val);
+        localStorage.setItem('muted', 'false');
     }
 
     async function fetchAlbumArt(artist, album) {
