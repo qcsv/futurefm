@@ -84,6 +84,7 @@ class Auth
         // Check attempt count before doing anything else
         $attempts = $this->db->getLoginAttempts($ip);
         if ($attempts >= self::MAX_ATTEMPTS) {
+            $this->db->resetLoginAttempts($ip);
             $this->redirect('/scp.png');
         }
  
@@ -93,6 +94,7 @@ class Auth
             $newAttempts = $this->db->recordLoginAttempt($ip);
  
             if ($newAttempts >= self::MAX_ATTEMPTS) {
+                $this->db->resetLoginAttempts($ip);
                 $this->redirect('/scp.png');
             }
  
