@@ -234,6 +234,26 @@ button.btn-danger:hover, .btn-danger:hover {
     color:            var(--mid);
 }
 
+.album-art-error {
+    position:         absolute;
+    bottom:           4px;
+    right:            4px;
+    width:            18px;
+    height:           18px;
+    background-color: var(--dark);
+    border:           1px solid var(--mid);
+    border-radius:    50%;
+    font-size:        11px;
+    line-height:      18px;
+    text-align:       center;
+    color:            var(--mid);
+    cursor:           help;
+}
+
+.album-art-error::after {
+    content: '?';
+}
+
 .now-playing-info {
     flex: 1;
     padding-top: 0.5rem;
