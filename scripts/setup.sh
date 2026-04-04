@@ -9,6 +9,11 @@ set -e
 # environment, to obtain a Let's Encrypt TLS certificate automatically.
 # If neither is provided the script runs in HTTP-only mode and prints
 # the certbot command you can run later.
+#
+# Flags:
+#   --update    Redeploy files and restart services only.
+#               Skips package installation and database initialization.
+#               Use this to push code changes to an already-installed site.
 
 REPO_DIR="$(cd "$(dirname "$0")/.." && pwd)"
 APP_DIR="/opt/radio"
@@ -17,30 +22,51 @@ VHOST_HTTP="/etc/apache2/sites-available/futureradio.conf"
 VHOST_SSL="/etc/apache2/sites-available/futureradio-ssl.conf"
 DOMAIN="futureradio.net"
 
-# Certbot email: CLI arg → env var → empty (HTTP-only mode)
-CERTBOT_EMAIL="${1:-${CERTBOT_EMAIL:-}}"
+# Parse flags
+UPDATE_ONLY=false
+CERTBOT_EMAIL="${CERTBOT_EMAIL:-}"
 
-echo "========================================================"
-echo "  futureradio.net setup"
-echo "  repo: $REPO_DIR"
-echo "========================================================"
+for arg in "$@"; do
+    case "$arg" in
+        --update) UPDATE_ONLY=true ;;
+        --*) echo "Unknown flag: $arg"; exit 1 ;;
+        *) CERTBOT_EMAIL="$arg" ;;
+    esac
+done
+
+if [ "$UPDATE_ONLY" = true ]; then
+    echo "========================================================"
+    echo "  futureradio.net update (files + services only)"
+    echo "  repo: $REPO_DIR"
+    echo "========================================================"
+else
+    echo "========================================================"
+    echo "  futureradio.net setup"
+    echo "  repo: $REPO_DIR"
+    echo "========================================================"
+fi
 
 # ── 1. Packages ──────────────────────────────────────────────────────────────
 
-echo ""
-echo "====> Installing packages"
-sudo apt-get update -qq
-sudo apt-get install -y \
-    mpd \
-    mpc \
-    apache2 \
-    php8.4 \
-    php8.4-sqlite3 \
-    php8.4-mbstring \
-    libapache2-mod-php8.4 \
-    sqlite3 \
-    certbot \
-    python3-certbot-apache
+if [ "$UPDATE_ONLY" = false ]; then
+    echo ""
+    echo "====> Installing packages"
+    sudo apt-get update -qq
+    sudo apt-get install -y \
+        mpd \
+        mpc \
+        apache2 \
+        php8.4 \
+        php8.4-sqlite3 \
+        php8.4-mbstring \
+        libapache2-mod-php8.4 \
+        sqlite3 \
+        certbot \
+        python3-certbot-apache
+else
+    echo ""
+    echo "====> Skipping package installation (--update mode)"
+fi
 
 # ── 2. Directory structure ────────────────────────────────────────────────────
 
@@ -105,17 +131,22 @@ sudo chmod -R 750 "$APP_DIR/logs"
 
 # ── 5. Initialize SQLite database ────────────────────────────────────────────
 
-echo ""
-echo "====> Initializing database"
+if [ "$UPDATE_ONLY" = false ]; then
+    echo ""
+    echo "====> Initializing database"
 
-DB_FILE="$APP_DIR/data/radio.db"
+    DB_FILE="$APP_DIR/data/radio.db"
 
-if [ -f "$DB_FILE" ]; then
-    echo "     WARNING: $DB_FILE already exists, skipping initialization"
-    echo "     Delete it manually and re-run if you want a fresh database"
+    if [ -f "$DB_FILE" ]; then
+        echo "     WARNING: $DB_FILE already exists, skipping initialization"
+        echo "     Delete it manually and re-run if you want a fresh database"
+    else
+        sudo -u www-data sh -c "sqlite3 '$DB_FILE' < '$APP_DIR/data/schema.sql'"
+        echo "     Created $DB_FILE"
+    fi
 else
-    sudo -u www-data sh -c "sqlite3 '$DB_FILE' < '$APP_DIR/data/schema.sql'"
-    echo "     Created $DB_FILE"
+    echo ""
+    echo "====> Skipping database initialization (--update mode)"
 fi
 
 # ── 6. Apache modules ─────────────────────────────────────────────────────────
@@ -306,7 +337,11 @@ fi
 
 echo ""
 echo "========================================================"
-echo "  Setup complete."
+if [ "$UPDATE_ONLY" = true ]; then
+    echo "  Update complete."
+else
+    echo "  Setup complete."
+fi
 if [ "$TLS_ENABLED" = true ]; then
     echo "  Site:   https://${DOMAIN}"
     echo "  Stream: https://${DOMAIN}/stream"
