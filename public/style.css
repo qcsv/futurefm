@@ -632,16 +632,6 @@ body:has(.player-bar:not(.player-bar--sticky)) .site-main {
     color:     var(--grey);
 }
 
-.playlist-drag-item-loop {
-    display:     flex;
-    align-items: center;
-    gap:         0.35rem;
-    font-size:   0.75rem;
-    color:       var(--pink-light);
-    margin-top:  0.4rem;
-    cursor:      pointer;
-}
-
 /* ── Calendar outer wrapper ──────────────────────────────────────────────── */
 
 .sched-calendar-outer {
@@ -651,7 +641,6 @@ body:has(.player-bar:not(.player-bar--sticky)) .site-main {
 }
 
 .sched-calendar-scroll {
-    max-height: 600px;
     overflow-y: auto;
     overflow-x: hidden;
 }
@@ -660,17 +649,16 @@ body:has(.player-bar:not(.player-bar--sticky)) .site-main {
 
 .sched-calendar {
     display:    flex;
-    min-width:  560px;
+    min-width:  600px;
 }
 
 /* Time gutter */
 .time-gutter {
-    width:       44px;
+    width:       50px;
     flex-shrink: 0;
 }
 
 .time-gutter-body {
-    height:   1440px;
     position: relative;
 }
 
@@ -684,18 +672,25 @@ body:has(.player-bar:not(.player-bar--sticky)) .site-main {
     pointer-events: none;
 }
 
+.time-label--minor {
+    color: var(--mid);
+    font-size: 0.6rem;
+}
+
 /* Day columns */
 .cal-col {
     flex:        1;
-    min-width:   70px;
+    min-width:   80px;
     border-left: 1px solid var(--mid);
 }
 
 .cal-col-header {
-    height:          28px;
+    height:          44px;
     display:         flex;
+    flex-direction:  column;
     align-items:     center;
     justify-content: center;
+    gap:             2px;
     font-size:       0.78rem;
     font-weight:     bold;
     color:           var(--pink-light);
@@ -711,9 +706,33 @@ body:has(.player-bar:not(.player-bar--sticky)) .site-main {
     background-color: rgba(255, 45, 120, 0.08);
 }
 
+.cal-col-header-day {
+    line-height: 1;
+}
+
+.cal-col-header-loop {
+    display:     flex;
+    align-items: center;
+    gap:         3px;
+    font-size:   0.6rem;
+    font-weight: normal;
+    color:       var(--grey);
+    cursor:      pointer;
+    user-select: none;
+}
+
+.cal-col-header-loop input[type="checkbox"] {
+    margin:  0;
+    cursor:  pointer;
+    accent-color: var(--pink);
+}
+
+.cal-col-header-loop-label {
+    opacity: 0.8;
+}
+
 /* The droppable body of each column */
 .cal-col-body {
-    height:   1440px;
     position: relative;
     cursor:   crosshair;
     transition: background-color 0.1s;
@@ -729,13 +748,16 @@ body:has(.player-bar:not(.player-bar--sticky)) .site-main {
     left:       0;
     right:      0;
     height:     1px;
-    background: var(--mid);
+    background: #3a3a3a;
     pointer-events: none;
 }
 
-/* Stronger line every 6 hours */
-.hour-line:nth-child(6n+1) {
-    background: #3a3a3a;
+.hour-line--minor {
+    background: var(--mid);
+}
+
+.hour-line--quarter {
+    background: rgba(255, 255, 255, 0.04);
 }
 
 /* ── Drop preview ghost ──────────────────────────────────────────────────── */
@@ -773,17 +795,6 @@ body:has(.player-bar:not(.player-bar--sticky)) .site-main {
     cursor: grabbing;
 }
 
-/* Loop-all-day blocks get a diagonal stripe pattern */
-.sched-block--loop {
-    background: repeating-linear-gradient(
-        45deg,
-        var(--pink),
-        var(--pink)  8px,
-        #c01a5a      8px,
-        #c01a5a     16px
-    );
-}
-
 .sched-block--inactive {
     opacity: 0.4;
 }
@@ -793,7 +804,7 @@ body:has(.player-bar:not(.player-bar--sticky)) .site-main {
     white-space:   nowrap;
     overflow:      hidden;
     text-overflow: ellipsis;
-    padding-right: 32px; /* leave room for buttons */
+    padding-right: 20px; /* leave room for delete button */
 }
 
 .sched-block-dur {
