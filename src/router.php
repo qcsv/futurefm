@@ -151,6 +151,12 @@ class Router
             require VIEWS_DIR . '/player.php';
         });
 
+        $this->get('/scp', function () use ($auth) {
+            $auth->resetAttempts();
+            header('Location: /scp.png');
+            exit;
+        });
+
         $this->get('/login', function () use ($auth) {
             if ($auth->isLoggedIn()) {
                 header('Location: /');

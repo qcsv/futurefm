@@ -84,18 +84,16 @@ class Auth
         // Check attempt count before doing anything else
         $attempts = $this->db->getLoginAttempts($ip);
         if ($attempts >= self::MAX_ATTEMPTS) {
-            $this->db->resetLoginAttempts($ip);
-            $this->redirect('/scp.png');
+            $this->redirect('/scp');
         }
- 
+
         $user = $this->db->findUserByUsername($username);
- 
+
         if ($user === null || !$this->verifyPassword($password, $user['password'])) {
             $newAttempts = $this->db->recordLoginAttempt($ip);
- 
+
             if ($newAttempts >= self::MAX_ATTEMPTS) {
-                $this->db->resetLoginAttempts($ip);
-                $this->redirect('/scp.png');
+                $this->redirect('/scp');
             }
  
             $remaining = self::MAX_ATTEMPTS - $newAttempts;
@@ -322,6 +320,16 @@ class Auth
     // Helpers
     // -------------------------------------------------------------------------
  
+    /**
+     * Reset the login attempt counter for the current client IP.
+     *
+     * Called when the joke page loads so the user can try again.
+     */
+    public function resetAttempts(): void
+    {
+        $this->db->resetLoginAttempts($this->getClientIp());
+    }
+
     /**
      * Get the client IP address.
      *
