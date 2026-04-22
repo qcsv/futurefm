@@ -91,7 +91,8 @@ for ($d = 0; $d < 7; $d++) {
                 ?>
                     <div class="playlist-drag-item"
                          draggable="true"
-                         ondragstart="onSidebarDragStart(event, <?= json_encode($pl['playlist']) ?>, <?= $dur ?>)"
+                         data-playlist="<?= htmlspecialchars($pl['playlist']) ?>"
+                         data-duration="<?= $dur ?>"
                          ondragend="this.classList.remove('dragging')">
                         <div class="playlist-drag-item-name"><?= htmlspecialchars($pl['playlist']) ?></div>
                         <div class="playlist-drag-item-meta">
@@ -178,16 +179,18 @@ for ($d = 0; $d < 7; $d++) {
 function renderBlock(array $s, int $durationSecs, int $pxPerMin, int $totalMin): string {
     $id       = (int) $s['id'];
     $name     = htmlspecialchars($s['playlist_name']);
+    $nameAttr = htmlspecialchars($s['playlist_name']);
     $dur      = $durationSecs > 0 ? htmlspecialchars(fmtDur($durationSecs)) : '';
     $style    = blockStyle($s, $durationSecs, $pxPerMin, $totalMin);
     $active   = $s['active'] ? '' : ' sched-block--inactive';
-    $nameJs   = json_encode($s['playlist_name']);
 
     return <<<HTML
 <div class="sched-block{$active}"
      style="{$style}"
      draggable="true"
-     ondragstart="onBlockDragStart(event, {$id}, {$nameJs}, {$durationSecs})">
+     data-id="{$id}"
+     data-playlist="{$nameAttr}"
+     data-duration="{$durationSecs}">
     <div class="sched-block-name">{$name}</div>
     <div class="sched-block-dur">{$dur}</div>
     <div class="sched-block-btns">
@@ -208,27 +211,36 @@ const GRID_HEIGHT   = <?= $GRID_HEIGHT ?>;
 
 let drag = null; // { type:'new'|'move', playlist, durationSecs, id? }
 
-// ── Sidebar drag ────────────────────────────────────────────────────────────
+// ── Sidebar drag (via data attributes) ─────────────────────────────────────
 
-function onSidebarDragStart(event, playlist, durationSecs) {
-    drag = {
-        type: 'new',
-        playlist,
-        durationSecs,
-    };
-    event.currentTarget.classList.add('dragging');
-    event.dataTransfer.effectAllowed = 'copy';
-    event.dataTransfer.setData('text/plain', playlist);
-}
+document.addEventListener('DOMContentLoaded', () => {
+    document.querySelectorAll('.playlist-drag-item').forEach(el => {
+        el.addEventListener('dragstart', e => {
+            drag = {
+                type: 'new',
+                playlist: el.dataset.playlist,
+                durationSecs: Number(el.dataset.duration),
+            };
+            el.classList.add('dragging');
+            e.dataTransfer.effectAllowed = 'copy';
+            e.dataTransfer.setData('text/plain', el.dataset.playlist);
+        });
+    });
 
-// ── Existing block drag ─────────────────────────────────────────────────────
-
-function onBlockDragStart(event, id, playlist, durationSecs) {
-    event.stopPropagation();
-    drag = { type: 'move', id, playlist, durationSecs };
-    event.dataTransfer.effectAllowed = 'move';
-    event.dataTransfer.setData('text/plain', String(id));
-}
+    document.querySelectorAll('.sched-block').forEach(el => {
+        el.addEventListener('dragstart', e => {
+            e.stopPropagation();
+            drag = {
+                type: 'move',
+                id: Number(el.dataset.id),
+                playlist: el.dataset.playlist,
+                durationSecs: Number(el.dataset.duration),
+            };
+            e.dataTransfer.effectAllowed = 'move';
+            e.dataTransfer.setData('text/plain', el.dataset.id);
+        });
+    });
+});
 
 // ── Drop column handlers ────────────────────────────────────────────────────
 
