@@ -248,7 +248,8 @@ class Router
             // Check cache first
             $cached = $db->getCachedAlbumArt($artist, $album);
             if ($cached !== null) {
-                echo json_encode(['url' => $cached]);
+                $error = $cached === '' ? 'No cover art found' : '';
+                echo json_encode(['url' => $cached, 'error' => $error]);
                 exit;
             }
 
@@ -285,21 +286,44 @@ class Router
                     if ($releaseId === null) {
                         $error = 'No MusicBrainz release found';
                     } else {
-                        // Use the Cover Art Archive index JSON to check existence without
-                        // downloading the full image.
-                        $caaIndex = @file_get_contents(
+                        // Fetch the CAA index to get a verified direct image URL.
+                        // Using the redirect URL (/front-250) causes browsers to log
+                        // "Incorrect contents fetched" when no front image exists because
+                        // CAA returns a JSON 404 body where an image is expected.
+                        $caaBody = @file_get_contents(
                             "https://coverartarchive.org/release/{$releaseId}",
                             false,
                             stream_context_create(['http' => [
-                                'timeout' => 5,
-                                'header'  => "User-Agent: FutureRadio/1.0 (futureradio.net)\r\n",
+                                'timeout'       => 5,
+                                'header'        => "User-Agent: FutureRadio/1.0 (futureradio.net)\r\n",
+                                'ignore_errors' => true,
                             ]])
                         );
 
-                        if ($caaIndex !== false) {
-                            $url = "https://coverartarchive.org/release/{$releaseId}/front-250";
+                        $caaStatus = 0;
+                        foreach (array_reverse($http_response_header ?? []) as $hdr) {
+                            if (preg_match('/^HTTP\/\S+\s+(\d{3})/', $hdr, $m)) {
+                                $caaStatus = (int) $m[1];
+                                break;
+                            }
+                        }
+
+                        if ($caaStatus === 200) {
+                            $caaData = json_decode($caaBody, true);
+                            foreach ($caaData['images'] ?? [] as $img) {
+                                if (!empty($img['front'])) {
+                                    $url = $img['thumbnails']['250']
+                                        ?? $img['thumbnails']['small']
+                                        ?? $img['image']
+                                        ?? '';
+                                    break;
+                                }
+                            }
+                            if ($url === '') {
+                                $error = 'Release has no front cover art';
+                            }
                         } else {
-                            $error = 'No cover art found on Cover Art Archive';
+                            $error = 'No cover art on Cover Art Archive';
                         }
                     }
                 }
