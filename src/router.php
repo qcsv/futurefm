@@ -146,7 +146,7 @@ class Router
 
         // ── Public ────────────────────────────────────────────────────────────
 
-        $this->get('/about', function () {
+        $this->get('/about', function () use ($auth) {
             require VIEWS_DIR . '/about.php';
         });
 
