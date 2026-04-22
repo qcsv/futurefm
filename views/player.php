@@ -10,7 +10,7 @@
                 src=""
                 alt="Album art"
                 style="display:none"
-                onerror="this.style.display='none'; artHolder.style.display='flex';"
+                onerror="this.style.display='none'; document.getElementById('album-art-placeholder').style.display='flex';"
             >
             <div class="album-art-placeholder" id="album-art-placeholder">&#9835;</div>
             <div class="album-art-error" id="album-art-error" style="display:none" title=""></div>
