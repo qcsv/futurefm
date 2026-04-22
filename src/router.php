@@ -248,7 +248,8 @@ class Router
             // Check cache first
             $cached = $db->getCachedAlbumArt($artist, $album);
             if ($cached !== null) {
-                echo json_encode(['url' => $cached]);
+                $error = $cached === '' ? 'No cover art found' : '';
+                echo json_encode(['url' => $cached, 'error' => $error]);
                 exit;
             }
 
@@ -285,22 +286,9 @@ class Router
                     if ($releaseId === null) {
                         $error = 'No MusicBrainz release found';
                     } else {
-                        // Use the Cover Art Archive index JSON to check existence without
-                        // downloading the full image.
-                        $caaIndex = @file_get_contents(
-                            "https://coverartarchive.org/release/{$releaseId}",
-                            false,
-                            stream_context_create(['http' => [
-                                'timeout' => 5,
-                                'header'  => "User-Agent: FutureRadio/1.0 (futureradio.net)\r\n",
-                            ]])
-                        );
-
-                        if ($caaIndex !== false) {
-                            $url = "https://coverartarchive.org/release/{$releaseId}/front-250";
-                        } else {
-                            $error = 'No cover art found on Cover Art Archive';
-                        }
+                        // Return the URL directly; the browser's onerror handler shows
+                        // the placeholder if the image fails to load.
+                        $url = "https://coverartarchive.org/release/{$releaseId}/front-250";
                     }
                 }
             } catch (\Throwable $e) {
