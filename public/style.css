@@ -855,3 +855,90 @@ body:has(.player-bar:not(.player-bar--sticky)) .site-main {
 .playlist-header h2 {
     margin-bottom: 0.5rem;
 }
+
+/* ── About page ──────────────────────────────────────────────────────────── */
+
+.about-page {
+    max-width: 680px;
+}
+
+.about-classification {
+    font-size:      0.75rem;
+    color:          var(--grey);
+    letter-spacing: 0.15em;
+    text-transform: uppercase;
+    margin-bottom:  2rem;
+    border-top:     1px solid var(--mid);
+    border-bottom:  1px solid var(--mid);
+    padding:        0.5rem 0;
+    text-align:     center;
+}
+
+.about-classification--footer {
+    margin-top:    2rem;
+    margin-bottom: 0;
+}
+
+.about-logo-wrap {
+    margin-bottom: 1.5rem;
+}
+
+.about-logo {
+    max-width:  220px;
+    display:    block;
+    border:     2px solid var(--pink);
+}
+
+.about-subtitle {
+    color:         var(--grey);
+    font-size:     0.85rem;
+    letter-spacing: 0.1em;
+    text-transform: uppercase;
+    margin-bottom: 2rem;
+    margin-top:    -0.75rem;
+}
+
+.about-body {
+    display:        flex;
+    flex-direction: column;
+    gap:            1.5rem;
+}
+
+.about-body p {
+    color:       var(--white);
+    line-height: 1.8;
+}
+
+.about-body strong {
+    color: var(--pink-light);
+}
+
+.about-body em {
+    color:      var(--pink);
+    font-style: normal;
+}
+
+.about-image-wrap {
+    border-left: 3px solid var(--pink);
+    padding-left: 1rem;
+}
+
+.about-image {
+    max-width: 100%;
+    display:   block;
+    border:    1px solid var(--mid);
+    filter:    grayscale(30%) contrast(1.1);
+}
+
+.about-notice {
+    background-color: var(--dark);
+    border-left:      3px solid var(--pink);
+    padding:          0.75rem 1rem;
+    font-size:        0.85rem;
+    color:            var(--grey);
+    letter-spacing:   0.05em;
+}
+
+.about-actions {
+    margin-top: 2rem;
+}

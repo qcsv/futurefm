@@ -10,6 +10,7 @@
     <header class="site-header">
         <a href="/" class="site-name"><?= htmlspecialchars(SITE_NAME) ?></a>
         <nav class="site-nav">
+            <a href="/about">About</a>
             <?php if ($auth->isLoggedIn()): ?>
                 <?php $currentUser = $auth->currentUser(); ?>
                 <span class="nav-user"><?= htmlspecialchars($currentUser['username']) ?></span>

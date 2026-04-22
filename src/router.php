@@ -146,6 +146,10 @@ class Router
 
         // ── Public ────────────────────────────────────────────────────────────
 
+        $this->get('/about', function () {
+            require VIEWS_DIR . '/about.php';
+        });
+
         $this->get('/', function () use ($auth) {
             $auth->requireAuth();
             require VIEWS_DIR . '/player.php';
