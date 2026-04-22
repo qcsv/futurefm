@@ -286,9 +286,45 @@ class Router
                     if ($releaseId === null) {
                         $error = 'No MusicBrainz release found';
                     } else {
-                        // Return the URL directly; the browser's onerror handler shows
-                        // the placeholder if the image fails to load.
-                        $url = "https://coverartarchive.org/release/{$releaseId}/front-250";
+                        // Fetch the CAA index to get a verified direct image URL.
+                        // Using the redirect URL (/front-250) causes browsers to log
+                        // "Incorrect contents fetched" when no front image exists because
+                        // CAA returns a JSON 404 body where an image is expected.
+                        $caaBody = @file_get_contents(
+                            "https://coverartarchive.org/release/{$releaseId}",
+                            false,
+                            stream_context_create(['http' => [
+                                'timeout'       => 5,
+                                'header'        => "User-Agent: FutureRadio/1.0 (futureradio.net)\r\n",
+                                'ignore_errors' => true,
+                            ]])
+                        );
+
+                        $caaStatus = 0;
+                        foreach (array_reverse($http_response_header ?? []) as $hdr) {
+                            if (preg_match('/^HTTP\/\S+\s+(\d{3})/', $hdr, $m)) {
+                                $caaStatus = (int) $m[1];
+                                break;
+                            }
+                        }
+
+                        if ($caaStatus === 200) {
+                            $caaData = json_decode($caaBody, true);
+                            foreach ($caaData['images'] ?? [] as $img) {
+                                if (!empty($img['front'])) {
+                                    $url = $img['thumbnails']['250']
+                                        ?? $img['thumbnails']['small']
+                                        ?? $img['image']
+                                        ?? '';
+                                    break;
+                                }
+                            }
+                            if ($url === '') {
+                                $error = 'Release has no front cover art';
+                            }
+                        } else {
+                            $error = 'No cover art on Cover Art Archive';
+                        }
                     }
                 }
             } catch (\Throwable $e) {
